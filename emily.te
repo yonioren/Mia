@@ -1,0 +1,31 @@
+
+module emily 1.0;
+
+require {
+	type httpd_t;
+	type default_t;
+	type httpd_sys_script_exec_t;
+	type hi_reserved_port_t;
+	class tcp_socket name_bind;
+	class dir { write remove_name read add_name };
+	class file { write read create unlink getattr };
+}
+
+#============= httpd_t ==============
+
+#!!!! This avc is allowed in the current policy
+allow httpd_t default_t:dir read;
+
+#!!!! This avc is allowed in the current policy
+allow httpd_t default_t:file { read getattr };
+
+#!!!! This avc is allowed in the current policy
+allow httpd_t hi_reserved_port_t:tcp_socket name_bind;
+allow httpd_t httpd_sys_script_exec_t:dir remove_name;
+
+#!!!! This avc is allowed in the current policy
+allow httpd_t httpd_sys_script_exec_t:dir { write add_name };
+allow httpd_t httpd_sys_script_exec_t:file unlink;
+
+#!!!! This avc is allowed in the current policy
+allow httpd_t httpd_sys_script_exec_t:file { write create };
