@@ -11,7 +11,7 @@ import uuid
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename=str(os.path.dirname(os.path.abspath(__file__))) + '/tests/unit/EmilyLogs.log',
+logging.basicConfig(filename=str(os.path.dirname(os.path.abspath(__file__))) + '/tests/unit/MiaLogs.log',
                     format='[%(asctime)s] [%(levelname)s] %(module)s - %(funcName)s:   %(message)s',
                     level=logging.DEBUG,
                     datefmt='%m/%d/%Y %I:%M:%S %p')
@@ -54,6 +54,7 @@ class Farm:
             logger.debug("received unknown argument %s" % str(key))
 
     def get_members(self):
+        logger.debug("getting members")
         return self.members
     
     def get_member(self, member_id):
@@ -86,7 +87,6 @@ class Farm:
         representation = representation + "port: " + str(self.port) + "\n"
         representation = representation + "location: " + str(self.location) + "\n"
         representation = representation + "lb_method: " + str(self.lb_method) + "\n"
-        # representation = representation + "logger: " + str(self.logger) + "\n"
         representation += "members: \n"
         for member in self.members.values():
             representation = representation + "\t" + str(member)
@@ -99,7 +99,7 @@ class Farm:
         return json.dumps(farm_dict)
 
 
-class Farm_Member:
+class FarmMember:
     def __init__(self, args):
         if isinstance(args, str):
             self.url = args
@@ -112,13 +112,11 @@ class Farm_Member:
         representation = representation + "{url: " + str(self.url) + ",\n"
         if self.weight is not None and self.weight != "":
             representation = representation + "weight: " + str(self.weight) + "}\n"
-        # representation = representation + ";"
         return representation
 
     def __repr__(self):
         return str(self)
 
-    # unit tests
 if __name__ == '__main__':
     farm = Farm(farm_id = uuid.uuid4(),
                 args = {'lb_method': 'round_robin',
@@ -128,7 +126,7 @@ if __name__ == '__main__':
                  'ip': '190.20.18.139'})
     print(str(farm))
     print(" adding member")
-    member = Farm_Member({'url': 'lnx-int-yum-1:6793',
+    member = FarmMember({'url': 'lnx-int-yum-1:6793',
                           'weight': 2})
     farm.add_member(member)
     print(member)

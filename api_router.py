@@ -6,15 +6,16 @@ Created on Apr 24, 2016
 '''
 
 from flask import Flask, make_response
-from emily_view import Emily_view
-from emily_model import Emily_Model
+from emily_view import EmilyView
+from emily_model import EmilyModel
 import json
 
-class Emily(Flask):
+
+class Mia(Flask):
     def __init__(self, name):
         Flask.__init__(self, name)
-        self.model = Emily_Model()
-        self.view = Emily_view(self.model)
+        self.model = EmilyModel()
+        self.view = EmilyView(self.model)
         self.route_view()
         
     def route_view(self):
@@ -22,10 +23,8 @@ class Emily(Flask):
         for v_route in view_routes:
             self.add_url_rule(v_route['rule'], view_func=v_route['view_func'], methods=v_route['methods'])
 
-api_router = Emily(__name__)
+api_router = Mia(__name__)
 api_router.debug = True
-#if __name__ == '__main__':
-#    api_router.run(debug=True)
 
 @api_router.errorhandler(404)
 def not_found(error):

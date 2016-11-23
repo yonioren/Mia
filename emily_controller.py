@@ -3,6 +3,7 @@ Created on Apr 26, 2016
 
 @author: geiger
 '''
+from logging import getLogger
 from os import remove, system, listdir
 
 import errno
@@ -10,16 +11,13 @@ import errno
 
 from io import open
 
-from emily_entities import Farm_Member, Farm, logger
+from emily_entities import FarmMember, Farm, logger
 
+logger = getLogger(__name__)
 DEFAULT_CONF_DIR = "/etc/nginx/conf.d/"
 
 
-class Emily_Controller(object):
-    '''
-    classdocs
-    '''
-    
+class EmilyController(object):
     def __init__(self):
         '''
         Constructor
@@ -27,6 +25,7 @@ class Emily_Controller(object):
         self.conf_dir = DEFAULT_CONF_DIR
 
     def load_farms(self):
+        logger.debug("loading farms")
         farms={}
         conf_files = listdir(self.conf_dir)
         for conf in conf_files:
@@ -46,10 +45,10 @@ class Emily_Controller(object):
         file_content = str(conf_file.read()).split()
         conf_file.close()
         farm_args, members_args = self.parse_configuration(file_content)
-        members={}
+        members = {}
         while members_args.__len__() > 0:
             item = members_args.popitem()
-            members[item[0]] = Farm_Member({'url': item[0], 'weight': item[1]})
+            members[item[0]] = FarmMember({'url': item[0], 'weight': item[1]})
         farm_args['members'] = members
         return Farm(farm_id, farm_args)
 
@@ -192,7 +191,7 @@ class Emily_Controller(object):
 
 # unit tests
 if __name__ == '__main__':
-    controller = Emily_Controller()
+    controller = EmilyController()
     farms = controller.load_farms()
     print(str(farms))
     for farm in farms.values():

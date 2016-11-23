@@ -4,17 +4,21 @@ Created on Apr 24, 2016
 
 @author: geiger
 '''
+from logging import getLogger
+
 from emily_entities import logger
-from emily_model import Emily_Model
+from emily_model import EmilyModel
 from flask import request
 import json
 from flask.helpers import make_response
 
+logger = getLogger(__name__)
 
-class Emily_view:
+
+class EmilyView:
     def __init__(self, model=None):
         if model is None:
-            self.model = Emily_Model()
+            self.model = EmilyModel()
         else:
             self.model = model
 
@@ -72,10 +76,10 @@ class Emily_view:
             logger.debug("unknown method: {}".format(request.method.to_string()))
             raise("in Emily_View.farm_member_api, unknown method: {}".format(request.method.to_string()))
         
-    def request_data(self, request):
+    @staticmethod
+    def request_data(request):
         if request.headers['Content-Type'] == 'application/json':
             return json.loads(request.data)
-            # return request.json()
         elif request.headers['Content-Type'] == 'text/plain':
             try:
                 return json.loads(request.data)

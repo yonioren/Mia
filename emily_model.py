@@ -6,19 +6,19 @@ Created on Apr 24, 2016
 '''
 
 import json
-from emily_controller import Emily_Controller
+from emily_controller import EmilyController
 from emily_entities import Farm
 import uuid
 
 
-class Emily_Model(object):
+class EmilyModel(object):
 
     def __init__(self, controller=None):
         '''
         Constructor
         '''
         if controller is None:
-            self.controller = Emily_Controller()
+            self.controller = EmilyController()
         else:
             self.controller = controller
         self.farms = {}
@@ -114,7 +114,7 @@ class Emily_Model(object):
     
 # unit tests
 if __name__ == '__main__':
-    model = Emily_Model()
+    model = EmilyModel()
     print(str(model))
     for farm in model.get_farms().values():
         print str(farm)

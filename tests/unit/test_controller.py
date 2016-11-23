@@ -3,7 +3,7 @@ import requests
 from nose.tools import *
 import unittest
 
-from emily_model import Emily_Model
+from emily_model import EmilyModel
 
 
 class TestMatchMaker(unittest.TestCase):
@@ -18,7 +18,7 @@ class TestMatchMaker(unittest.TestCase):
         f.read().strip()
 
     def test_text_plain_json(self):
-        model = Emily_Model()
+        model = EmilyModel()
         farms_len_before = len(model.get_farms())
 
         requests.post('http://localhost:666/Emily/farms',
@@ -31,7 +31,7 @@ class TestMatchMaker(unittest.TestCase):
         eq_(farms_len_before + 1, farms_len_after)
 
     def test_add_farm(self):
-        model = Emily_Model()
+        model = EmilyModel()
         farms_len_before = len(model.get_farms())
 
         requests.post(url='http://localhost:666/Emily/farms',
@@ -43,7 +43,7 @@ class TestMatchMaker(unittest.TestCase):
         eq_(farms_len_before + 1, farms_len_after)
 
     def test_get_farms(self):
-        model = Emily_Model()
+        model = EmilyModel()
 
         # remove all conf files
         self.setup_func()
@@ -70,7 +70,7 @@ class TestMatchMaker(unittest.TestCase):
         eq_(res.status_code, 405)
 
     def test_get_farm_by_id(self):
-        model = Emily_Model()
+        model = EmilyModel()
 
         # remove all conf files
         self.setup_func()
@@ -93,7 +93,7 @@ class TestMatchMaker(unittest.TestCase):
         eq_(req_res.status_code, 404)
 
     def test_delete_farm_by_id(self):
-        model = Emily_Model()
+        model = EmilyModel()
 
         # remove all conf files
         self.setup_func()
@@ -113,7 +113,7 @@ class TestMatchMaker(unittest.TestCase):
 
     def test_update_farm_by_id(self):
         port = str(8080)
-        model = Emily_Model()
+        model = EmilyModel()
 
         # remove all conf files
         self.setup_func()
@@ -133,7 +133,7 @@ class TestMatchMaker(unittest.TestCase):
         eq_(model.get_farm(farm_id).port, port)
 
     def test_create_farm_member(self):
-        model = Emily_Model()
+        model = EmilyModel()
 
         # remove all conf files
         self.setup_func()
@@ -156,7 +156,7 @@ class TestMatchMaker(unittest.TestCase):
         eq_(len(farm_members_before) + 1, len(farm_members_after))
 
     def test_create_more_then_one_member(self):
-        model = Emily_Model()
+        model = EmilyModel()
 
         # remove all conf files
         self.setup_func()
@@ -183,7 +183,7 @@ class TestMatchMaker(unittest.TestCase):
         eq_(len(farm_members_before) + 2, len(farm_members_after))
 
     def test_get_members(self):
-        model = Emily_Model()
+        model = EmilyModel()
 
         # remove all conf files
         self.setup_func()
@@ -207,7 +207,7 @@ class TestMatchMaker(unittest.TestCase):
         eq_(req_res.status_code, 200)
 
     def test_get_farm_member(self):
-        model = Emily_Model()
+        model = EmilyModel()
 
         # remove all conf files
         self.setup_func()
@@ -233,7 +233,7 @@ class TestMatchMaker(unittest.TestCase):
         eq_(req_res.status_code, 200)
 
     def test_delete_farm_member(self):
-        model = Emily_Model()
+        model = EmilyModel()
 
         # remove all conf files
         self.setup_func()
