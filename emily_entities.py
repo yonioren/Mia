@@ -66,7 +66,7 @@ class Farm:
     def add_member(self, farm_member):
         member_id = self.generate_farm_member_id()
         if self.get_member(member_id) is None:
-            self.members[member_id] = farm_member
+            self.members[member_id] = FarmMember(farm_member)
         else:
             logger.warning("member_id: " + str(member_id) + " already exists")
     
@@ -105,7 +105,7 @@ class FarmMember:
             self.url = args
         else:
             self.url = args['url']
-            self.weight = args['weight']
+            self.weight = args['weight'] if 'weight' in args else 1
 
     def __str__(self):
         representation = ""
