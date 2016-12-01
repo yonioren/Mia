@@ -6,8 +6,8 @@ Created on Apr 24, 2016
 '''
 from logging import getLogger
 
-from emily_entities import logger
-from emily_model import EmilyModel
+from mialb_entities import logger
+from mialb_model import MiaLBModel
 from flask import request
 import json
 from flask.helpers import make_response
@@ -15,10 +15,10 @@ from flask.helpers import make_response
 logger = getLogger(__name__)
 
 
-class EmilyView:
+class MiaLBView:
     def __init__(self, model=None):
         if model is None:
-            self.model = EmilyModel()
+            self.model = MiaLBModel()
         else:
             self.model = model
 
