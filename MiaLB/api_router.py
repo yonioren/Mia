@@ -6,16 +6,16 @@ Created on Apr 24, 2016
 '''
 
 from flask import Flask, make_response
-from emily_view import EmilyView
-from emily_model import EmilyModel
+from mialb_view import MiaLBView
+from mialb_model import MiaLBModel
 import json
 
 
 class Mia(Flask):
     def __init__(self, name):
         Flask.__init__(self, name)
-        self.model = EmilyModel()
-        self.view = EmilyView(self.model)
+        self.model = MiaLBModel()
+        self.view = MiaLBView(self.model)
         self.route_view()
         
     def route_view(self):
