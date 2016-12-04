@@ -6,8 +6,8 @@ Created on Apr 24, 2016
 '''
 
 import json
-from mialb_controller import MiaLBController
-from mialb_entities import Farm
+from .mialb_controller import MiaLBController
+from .mialb_entities import Farm
 import uuid
 
 
@@ -117,5 +117,5 @@ if __name__ == '__main__':
     model = MiaLBModel()
     print(str(model))
     for farm in model.get_farms().values():
-        print str(farm)
+        print(str(farm))
     

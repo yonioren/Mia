@@ -6,8 +6,8 @@ Created on Apr 24, 2016
 '''
 from logging import getLogger
 
-from mialb_entities import logger
-from mialb_model import MiaLBModel
+from .mialb_entities import logger
+from .mialb_model import MiaLBModel
 from flask import request
 import json
 from flask.helpers import make_response
@@ -34,7 +34,7 @@ class MiaLBView:
             return res.data
         else:
             logger.debug("unknown method: %s" % request.method.to_string())
-            raise("in Emily_View.farms_api, unknown method: %s" % request.method.to_string())
+            raise("in MiaLBView.farms_api, unknown method: %s" % request.method.to_string())
 
     def farm_api(self, farm_id):
         if request.method == 'GET':
@@ -49,7 +49,7 @@ class MiaLBView:
             response = make_response(self.model.delete_farm(farm_id))
         else:
             logger.debug("unknown method: %s" % request.method.to_string())
-            raise("in Emily_View.farm_api, unknown method: %s" % request.method.to_string())
+            raise("in MiaLBView.farm_api, unknown method: %s" % request.method.to_string())
 
         return response
 
@@ -65,7 +65,7 @@ class MiaLBView:
             return make_response(self.model.create_farm_member(farm_id, args))
         else:
             logger.debug("unknown method: %s" % request.method.to_string())
-            raise("in Emily_View.farm_members_api, unknown method: %s" % request.method.to_string())
+            raise("in MiaLBView.farm_members_api, unknown method: %s" % request.method.to_string())
         
     def farm_member_api(self, farm_id, member_id):
         if request.method == 'GET':
@@ -74,7 +74,17 @@ class MiaLBView:
             return json.dumps(self.model.delete_farm_member(farm_id, member_id))
         else:
             logger.debug("unknown method: {}".format(request.method.to_string()))
-            raise("in Emily_View.farm_member_api, unknown method: {}".format(request.method.to_string()))
+            raise("in MiaLBView.farm_member_api, unknown method: {}".format(request.method.to_string()))
+
+    def farm_instance_api(self, farm_id):
+        if request.method == 'GET':
+            pass
+        elif request.method == 'POST':
+            args = self.request_data(request)
+            return json.dumps(self.model.create_farm_instance(farm_id, args))
+        else:
+            logger.debug("unknown method: {}".format(request.method.to_string()))
+            raise("in MiaLBView.farm_instance_api, unknown method: {}".format(request.method.to_string()))
         
     @staticmethod
     def request_data(request):
