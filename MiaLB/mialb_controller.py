@@ -3,21 +3,19 @@ Created on Apr 26, 2016
 
 @author: geiger
 '''
+import errno
+
+from io import open
 from logging import getLogger
 from os import remove, system, listdir
 
-import errno
-
-
-from io import open
-
-from emily_entities import FarmMember, Farm, logger
+from .mialb_entities import FarmMember, Farm, logger
 
 logger = getLogger(__name__)
 DEFAULT_CONF_DIR = "/etc/nginx/conf.d/"
 
 
-class EmilyController(object):
+class MiaLBController(object):
     def __init__(self):
         '''
         Constructor
@@ -191,7 +189,7 @@ class EmilyController(object):
 
 # unit tests
 if __name__ == '__main__':
-    controller = EmilyController()
+    controller = MiaLBController()
     farms = controller.load_farms()
     print(str(farms))
     for farm in farms.values():

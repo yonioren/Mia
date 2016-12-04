@@ -6,8 +6,8 @@ Created on Apr 24, 2016
 '''
 from logging import getLogger
 
-from emily_entities import logger
-from emily_model import EmilyModel
+from .mialb_entities import logger
+from .mialb_model import MiaLBModel
 from flask import request
 import json
 from flask.helpers import make_response
@@ -15,10 +15,10 @@ from flask.helpers import make_response
 logger = getLogger(__name__)
 
 
-class EmilyView:
+class MiaLBView:
     def __init__(self, model=None):
         if model is None:
-            self.model = EmilyModel()
+            self.model = MiaLBModel()
         else:
             self.model = model
 
@@ -34,7 +34,7 @@ class EmilyView:
             return res.data
         else:
             logger.debug("unknown method: %s" % request.method.to_string())
-            raise("in Emily_View.farms_api, unknown method: %s" % request.method.to_string())
+            raise("in MiaLBView.farms_api, unknown method: %s" % request.method.to_string())
 
     def farm_api(self, farm_id):
         if request.method == 'GET':
@@ -49,7 +49,7 @@ class EmilyView:
             response = make_response(self.model.delete_farm(farm_id))
         else:
             logger.debug("unknown method: %s" % request.method.to_string())
-            raise("in Emily_View.farm_api, unknown method: %s" % request.method.to_string())
+            raise("in MiaLBView.farm_api, unknown method: %s" % request.method.to_string())
 
         return response
 
@@ -65,7 +65,7 @@ class EmilyView:
             return make_response(self.model.create_farm_member(farm_id, args))
         else:
             logger.debug("unknown method: %s" % request.method.to_string())
-            raise("in Emily_View.farm_members_api, unknown method: %s" % request.method.to_string())
+            raise("in MiaLBView.farm_members_api, unknown method: %s" % request.method.to_string())
         
     def farm_member_api(self, farm_id, member_id):
         if request.method == 'GET':
@@ -74,7 +74,17 @@ class EmilyView:
             return json.dumps(self.model.delete_farm_member(farm_id, member_id))
         else:
             logger.debug("unknown method: {}".format(request.method.to_string()))
-            raise("in Emily_View.farm_member_api, unknown method: {}".format(request.method.to_string()))
+            raise("in MiaLBView.farm_member_api, unknown method: {}".format(request.method.to_string()))
+
+    def farm_instance_api(self, farm_id):
+        if request.method == 'GET':
+            pass
+        elif request.method == 'POST':
+            args = self.request_data(request)
+            return json.dumps(self.model.create_farm_instance(farm_id, args))
+        else:
+            logger.debug("unknown method: {}".format(request.method.to_string()))
+            raise("in MiaLBView.farm_instance_api, unknown method: {}".format(request.method.to_string()))
         
     @staticmethod
     def request_data(request):
@@ -91,17 +101,20 @@ class EmilyView:
         
     def view_api(self):
         routes = [
-                {'rule': '/Emily/farms',
+                {'rule': '/MiaLB/farms',
                  'view_func': self.farms_api,
                  'methods': ['GET', 'POST']},
-                {'rule': '/Emily/farms/<string:farm_id>',
+                {'rule': '/MiaLB/farms/<string:farm_id>',
                  'view_func': self.farm_api,
                  'methods': ['GET', 'PUT', 'DELETE']},
-                {'rule': '/Emily/farms/<string:farm_id>/members',
+                {'rule': '/MiaLB/farms/<string:farm_id>/members',
                  'view_func': self.farm_members_api,
                  'methods': ['GET', 'POST']},
-                {'rule': '/Emily/farms/<string:farm_id>/members/<string:member_id>',
+                {'rule': '/MiaLB/farms/<string:farm_id>/members/<string:member_id>',
                  'view_func': self.farm_member_api,
-                 'methods': ['GET', 'DELETE']}
+                 'methods': ['GET', 'DELETE']},
+                {'rule': '/MiaLB/farms/<string:farm_id>/instances',
+                 'view_func': self.farm_instance_api,
+                 'methods': ['GET', 'POST']}
                 ]
         return routes

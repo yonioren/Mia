@@ -1,0 +1,4 @@
+FROM server:port/user/nginx
+COPY startup.sh /startup.sh
+ENV MIALBURI http://mialb/conf.d/
+CMD /startup.sh
