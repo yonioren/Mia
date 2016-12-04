@@ -91,17 +91,20 @@ class MiaLBView:
         
     def view_api(self):
         routes = [
-                {'rule': '/Emily/farms',
+                {'rule': '/MiaLB/farms',
                  'view_func': self.farms_api,
                  'methods': ['GET', 'POST']},
-                {'rule': '/Emily/farms/<string:farm_id>',
+                {'rule': '/MiaLB/farms/<string:farm_id>',
                  'view_func': self.farm_api,
                  'methods': ['GET', 'PUT', 'DELETE']},
-                {'rule': '/Emily/farms/<string:farm_id>/members',
+                {'rule': '/MiaLB/farms/<string:farm_id>/members',
                  'view_func': self.farm_members_api,
                  'methods': ['GET', 'POST']},
-                {'rule': '/Emily/farms/<string:farm_id>/members/<string:member_id>',
+                {'rule': '/MiaLB/farms/<string:farm_id>/members/<string:member_id>',
                  'view_func': self.farm_member_api,
-                 'methods': ['GET', 'DELETE']}
+                 'methods': ['GET', 'DELETE']},
+                {'rule': '/MiaLB/farms/<string:farm_id>/instances',
+                 'view_func': self.farm_instance_api,
+                 'methods': ['GET', 'POST']}
                 ]
         return routes

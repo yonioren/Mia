@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 uid=`hostname`
-curl "${MIALBURI}/instance?uid=${uid}&farmid=${FARMID}"
-curl "${MIALBURI}/${FARMID}.conf"
+curl -H "Content-Type: application/json" -X POST -d '{"docker_uid": "'${uid}'"}' \
+ "${MIALBURI}/MiaLB/farms/${FARMID}/instances"
+curl "${MIALBURI}/${FARMID}.conf" -o /etc/nginx/conf.d/${FARMID}.conf
 flag=1
 for i in {1..5}
 do
