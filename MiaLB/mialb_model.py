@@ -6,6 +6,8 @@ Created on Apr 24, 2016
 '''
 
 import json
+
+from .InstanceController.DockerInstanceController import DockerInstanceController
 from .mialb_controller import MiaLBController
 from .mialb_entities import Farm
 import uuid
@@ -13,14 +15,10 @@ import uuid
 
 class MiaLBModel(object):
 
-    def __init__(self, controller=None):
-        '''
-        Constructor
-        '''
-        if controller is None:
-            self.controller = MiaLBController()
-        else:
-            self.controller = controller
+    def __init__(self, controller=None, instance_controller=None):
+        """ Constructor """
+        self.controller = controller if controller else MiaLBController()
+        self.instance_controller = instance_controller if instance_controller else DockerInstanceController()
         self.farms = {}
         self.indexes = {}
         self.load_farms()
@@ -101,6 +99,12 @@ class MiaLBModel(object):
             farm.delete_member(member_id)
             self.controller.commit_farm(farm)
             return json.dumps({"member_id": member_id, "farm_id": farm_id}), 201
+
+    def create_farm_instance(self, farm_id, args):
+        if self.get_farm(farm_id) is None:
+            return json.dumps({"error": "farm not found"}), 404
+        instance_id = args["instance_id"]
+        self.instance_controller.set_instance(farm_id=farm_id, instance_id=instance_id)
     
     def generate_farm_id(self):
         uid = uuid.uuid4() 
