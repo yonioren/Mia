@@ -124,6 +124,7 @@ class FarmMember:
         if isinstance(args, str):
             self.url = args
         else:
+            self.url = None
             if 'url' in args and self.is_url_valid(args['url']):
                 self.url = args['url']
             self.weight = args['weight'] if 'weight' in args else 1
@@ -132,7 +133,7 @@ class FarmMember:
     def is_url_valid(url):
         pattern = re.compile(
             r'^((?:http|ftp)s?://)?'  # optional protocol
-            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
+            r'(?:(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+(?:[A-Za-z]{2,6}\.?|[A-Za-z0-9-]{2,}\.?)|'  # domain...
             r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
             r'(?::\d+)?'  # optional port
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
