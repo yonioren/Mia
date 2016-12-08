@@ -7,6 +7,8 @@ Created on Apr 26, 2016
 import json
 import logging
 import os
+import re
+import socket
 import uuid
 
 
@@ -15,6 +17,11 @@ logging.basicConfig(filename=str(os.path.dirname(os.path.abspath(__file__))) + '
                     format='[%(asctime)s] [%(levelname)s] %(module)s - %(funcName)s:   %(message)s',
                     level=logging.DEBUG,
                     datefmt='%m/%d/%Y %I:%M:%S %p')
+
+PROTOCOLS = ['HTTP', 'HTTPS' 'FTP']
+MIN_PORT = 0
+MAX_PORT = 65535
+LB_METHOD = 'round_robin'
 
 
 class Farm:
@@ -30,26 +37,39 @@ class Farm:
         self.name = ""
         # so long defaults
         self.update_farm(args)
-        # name should not be empty
-        if self.name == "":
-            self.name = str(self.ip) + ":" + str(self.port) + '-' + str(self.location)
-            self.name = self.name.replace('/','-')
 
     def update_farm(self, args):
         if 'lb_method' in args:
-            self.lb_method = args.pop('lb_method')
+            lb_method = args.pop('lb_method')
+            if lb_method == LB_METHOD:
+                self.lb_method = lb_method
         if 'port' in args:
-            self.port = args.pop('port')
+            port = int(args.pop('port'))
+            if MIN_PORT <= port <= MAX_PORT:
+                self.port = port
         if 'location' in args:
             self.location = args.pop('location')
         if 'protocol' in args:
-            self.protocol = args.pop('protocol')
+            protocol = args.pop('protocol')
+            if protocol in PROTOCOLS:
+                self.protocol = protocol
         if 'members' in args:
             self.members = args.pop('members')
         if 'ip' in args:
-            self.ip = args.pop('ip')
+            ip = args.pop('ip')
+            # check if ip is legal address
+            try:
+                socket.inet_aton(ip)
+                self.ip = ip
+            except socket.error:
+                # Not legal ip
+                pass
         if 'name' in args:
             self.name = args.pop('name')
+        else:
+            # name should not be empty
+            self.name = str(self.ip) + ":" + str(self.port) + '-' + str(self.location)
+            self.name = self.name.replace('/', '-')
         for key in args.keys():
             logger.debug("received unknown argument %s" % str(key))
 
@@ -104,8 +124,20 @@ class FarmMember:
         if isinstance(args, str):
             self.url = args
         else:
-            self.url = args['url']
+            if 'url' in args and self.is_url_valid(args['url']):
+                self.url = args['url']
             self.weight = args['weight'] if 'weight' in args else 1
+
+    @staticmethod
+    def is_url_valid(url):
+        pattern = re.compile(
+            r'^((?:http|ftp)s?://)?'  # optional protocol
+            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+            r'(?::\d+)?'  # optional port
+            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+        return pattern.match(url)
 
     def __str__(self):
         representation = ""
