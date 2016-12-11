@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 
+from threading import Thread
+
 from .SingleInstanceController import SingleInstanceController
 
 
@@ -24,10 +26,20 @@ class DockerInstanceController(SingleInstanceController):
         self.swarm_uri = "connection string to swarm cluster?"
         # TODO: initial something of docker??
 
-    def set_instance(self, farm_id, instance_id):
-        super(DockerInstanceController, self).set_instance(farm_id=farm_id, instance_id=instance_id)
-        os.system("docker run -e FARMID={} server:port/user/mia-farm")
+    def set_instance(self, farm_id, instance_id=None):
+        Thread(target=super(DockerInstanceController, self).set_instance,
+               kwargs={'farm_id': farm_id, 'instance_id': instance_id}).start()
+
+    def rem_instance(self, farm_id=None, instance_id=None):
+        Thread(target=super(DockerInstanceController, self).rem_instance,
+               kwargs={'farm_id': farm_id, 'instance_id': instance_id}).start()
 
     def _remove_instance(self, farm_id):
         instance_id = super(DockerInstanceController, self)._remove_instance(farm_id=farm_id)
-        os.system("docker kill {}".format(instance_id))
+        return os.system("docker kill {}".format(instance_id))
+
+    def _create_instance(self, farm_id):
+        return os.popen("docker run -e FARMID={} server:port/user/mia-farm".format(farm_id)).read().strip()
+
+    def _update_instance(self, instance_id):
+        return os.system("docker exec {} /update_nginx.sh".format(instance_id))

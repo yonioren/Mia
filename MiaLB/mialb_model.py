@@ -6,11 +6,11 @@ Created on Apr 24, 2016
 '''
 
 import json
+import uuid
 
 from .InstanceController.DockerInstanceController import DockerInstanceController
 from .mialb_controller import MiaLBController
 from .mialb_entities import Farm
-import uuid
 
 
 class MiaLBModel(object):
@@ -50,6 +50,7 @@ class MiaLBModel(object):
         self.farms[farm_id] = new_farm
         self.create_indexes(farm_id, new_farm)
         self.controller.commit_farm(new_farm)
+        self.instance_controller.set_instance(farm_id=farm_id)
         return json.dumps({"farm": json.dumps(new_farm.__dict__)}), 201
         
     def update_farm(self, farm_id, args):
@@ -85,6 +86,7 @@ class MiaLBModel(object):
         if self.get_farm(farm_id) is None:
             return json.dumps({"error": "farm not found"}), 404
         farm = self.get_farm(farm_id)
+        # if the request came from docker, we want to get the address from docker inspect
         farm.add_member(args)
         self.controller.commit_farm(farm)
         return "member was added to farm", 201
