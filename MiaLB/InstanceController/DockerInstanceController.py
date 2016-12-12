@@ -16,6 +16,7 @@
 import os
 
 from threading import Thread
+from requests import get
 
 from .SingleInstanceController import SingleInstanceController
 
@@ -39,7 +40,10 @@ class DockerInstanceController(SingleInstanceController):
         return os.system("docker kill {}".format(instance_id))
 
     def _create_instance(self, farm_id):
-        return os.popen("docker run -e FARMID={} server:port/user/mia-farm".format(farm_id)).read().strip()
+        instance_id = os.popen("docker run -e FARMID={} server:port/user/mia-farm".format(farm_id)).read().strip()
+        # now we want to add an interface
+        os.system("docker ")
+        return instance_id
 
     def _update_instance(self, instance_id):
         return os.system("docker exec {} /update_nginx.sh".format(instance_id))
