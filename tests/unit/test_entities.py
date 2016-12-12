@@ -1,4 +1,5 @@
 import uuid
+import unittest
 
 from nose.tools import *
 
@@ -89,7 +90,10 @@ class TestMatchMaker(unittest.TestCase):
                                   'weight': 2})
         eq_(farm_member.url, 'DF.WER:345')
 
+    @raises(AttributeError)
     def test_farm_member_url_invalid(self):
-        farm_member = FarmMember({'url': 'http://DF.WER:sf',
-                                  'weight': 2})
-        eq_(farm_member.url, None)
+        FarmMember({'url': 'http://DF.WER:sf', 'weight': 2})
+
+    @raises(AttributeError)
+    def test_farm_member_no_url(self):
+        FarmMember({'weight': 2})

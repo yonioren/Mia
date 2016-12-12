@@ -8,9 +8,9 @@ Created on Apr 24, 2016
 import json
 import uuid
 
-from .InstanceController.DockerInstanceController import DockerInstanceController
-from .mialb_controller import MiaLBController
-from .mialb_entities import Farm
+from MiaLB.InstanceController.DockerInstanceController import DockerInstanceController
+from MiaLB.mialb_controller import MiaLBController
+from MiaLB.mialb_entities import Farm
 
 
 class MiaLBModel(object):
@@ -82,12 +82,12 @@ class MiaLBModel(object):
             return json.dumps({"error": "farm not found"}), 404
         return self.get_farm(farm_id).get_member(member_id)
     
-    def create_farm_member(self, farm_id, args):
+    def create_farm_member(self, farm_id, **kwargs):
         if self.get_farm(farm_id) is None:
             return json.dumps({"error": "farm not found"}), 404
         farm = self.get_farm(farm_id)
         # if the request came from docker, we want to get the address from docker inspect
-        farm.add_member(args)
+        farm.add_member(kwargs)
         self.controller.commit_farm(farm)
         return "member was added to farm", 201
 
@@ -105,7 +105,7 @@ class MiaLBModel(object):
     def create_farm_instance(self, farm_id, args):
         if self.get_farm(farm_id) is None:
             return json.dumps({"error": "farm not found"}), 404
-        instance_id = args["instance_id"]
+        instance_id = args["docker_uid"]
         self.instance_controller.set_instance(farm_id=farm_id, instance_id=instance_id)
     
     def generate_farm_id(self):
