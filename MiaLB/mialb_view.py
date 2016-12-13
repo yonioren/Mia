@@ -4,12 +4,13 @@ Created on Apr 24, 2016
 
 @author: geiger
 '''
+import json
+
 from logging import getLogger
 
-from .mialb_entities import logger
-from .mialb_model import MiaLBModel
+from MiaLB.mialb_entities import logger
+from MiaLB  .mialb_model import MiaLBModel
 from flask import request
-import json
 from flask.helpers import make_response
 
 logger = getLogger(__name__)
@@ -61,8 +62,12 @@ class MiaLBView:
             return json.dumps(members_json)
 
         elif request.method == 'POST':
-            args = self.request_data(request)
-            return make_response(self.model.create_farm_member(farm_id, args))
+            kwargs = self.request_data(request)
+            if 'Client-IP' in request.headers:
+                kwargs['ip'] = request.headers['Client-IP']
+            if 'Client-Port' in request.headers:
+                kwargs['port'] = request.headers['Client-Port']
+            return make_response(self.model.create_farm_member(farm_id, **kwargs))
         else:
             logger.debug("unknown method: %s" % request.method.to_string())
             raise("in MiaLBView.farm_members_api, unknown method: %s" % request.method.to_string())

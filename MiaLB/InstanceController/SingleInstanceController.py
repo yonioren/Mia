@@ -13,13 +13,17 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+from uuid import uuid4
 
 class SingleInstanceController(object):
     def __init__(self):
         self.relation = {}
 
-    def set_instance(self, farm_id, instance_id):
+    def set_instance(self, farm_id, instance_id=None):
+        if instance_id is None:
+            instance_id = self._create_instance(farm_id)
+        else:
+            self._update_instance(instance_id)
         if farm_id in self.relation:
             self._remove_instance(farm_id)
         self.relation[farm_id] = [instance_id]
@@ -42,3 +46,9 @@ class SingleInstanceController(object):
 
     def _remove_instance(self, farm_id):
         return self.relation.pop(farm_id)
+
+    def _create_instance(self, farm_id):
+        return str(uuid4())
+
+    def _update_instance(self, instance_id):
+        pass

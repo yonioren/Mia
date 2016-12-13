@@ -1,12 +1,25 @@
 import os
 import unittest
-
 import requests
-from MiaLB.mialb_model import MiaLBModel
+
 from nose.tools import *
+from subprocess import Popen
+
+from MiaLB.mialb_model import MiaLBModel
+# from MiaLB.api_router import api_router
 
 
 class TestMatchMaker(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        server_path = os.path.join(os.path.dirname(__file__), '../../MiaLB/api_router.py')
+        print(server_path)
+        cls.server = Popen(['/usr/bin/python2.7', server_path, '--run-damn-you'])
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.kill()
 
     @staticmethod
     def setup_func():
@@ -21,7 +34,7 @@ class TestMatchMaker(unittest.TestCase):
         model = MiaLBModel()
         farms_len_before = len(model.get_farms())
 
-        requests.post('http://localhost:666/Emily/farms',
+        requests.post('http://localhost:6669/MiaLB/farms',
                       [('Content-Type', 'application/json')],
                       {'lb_method': 'round_robin'})
 
@@ -34,7 +47,7 @@ class TestMatchMaker(unittest.TestCase):
         model = MiaLBModel()
         farms_len_before = len(model.get_farms())
 
-        requests.post(url='http://localhost:666/Emily/farms',
+        requests.post(url='http://localhost:6669/MiaLB/farms',
                       data="{\"lb_method\": \"round_robin\"}",
                       headers={'Content-Type': 'text/plain'})
         model.load_farms()
@@ -49,12 +62,12 @@ class TestMatchMaker(unittest.TestCase):
         self.setup_func()
 
         # add one farm
-        requests.post(url='http://localhost:666/Emily/farms',
+        requests.post(url='http://localhost:6669/MiaLB/farms',
                       data="{\"lb_method\": \"round_robin\"}",
                       headers={'Content-Type': 'text/plain'})
 
         # get farms
-        requests.get('http://localhost:666/Emily/farms')
+        requests.get('http://localhost:6669/MiaLB/farms')
 
         model.load_farms()
 
@@ -62,7 +75,7 @@ class TestMatchMaker(unittest.TestCase):
 
     def test_unknown_method(self):
         # request with not allowed method
-        res = requests.delete(url='http://localhost:666/Emily/farms',
+        res = requests.delete(url='http://localhost:6669/MiaLB/farms',
                               data="{\"lb_method\": \"round_robin\"}",
                               headers={'Content-Type': 'text/plain'})
 
@@ -75,19 +88,19 @@ class TestMatchMaker(unittest.TestCase):
         # remove all conf files
         self.setup_func()
 
-        requests.post(url='http://localhost:666/Emily/farms',
+        requests.post(url='http://localhost:6669/MiaLB/farms',
                       data="{\"lb_method\": \"round_robin\"}",
                       headers={'Content-Type': 'text/plain'})
         model.load_farms()
 
         res = model.get_farms().items()[0]
         farm_id = res[1].farm_id
-        req_res = requests.get('http://localhost:666/Emily/farms/' + farm_id)
+        req_res = requests.get('http://localhost:6669/MiaLB/farms/' + farm_id)
 
         eq_(req_res.status_code, 200)
 
     def test_get_farm_with_not_exist_id(self):
-        req_res = requests.get('http://localhost:666/Emily/farms/123')
+        req_res = requests.get('http://localhost:6669/MiaLB/farms/123')
 
         # 404-farm not found
         eq_(req_res.status_code, 404)
@@ -98,7 +111,7 @@ class TestMatchMaker(unittest.TestCase):
         # remove all conf files
         self.setup_func()
 
-        requests.post(url='http://localhost:666/Emily/farms',
+        requests.post(url='http://localhost:6669/MiaLB/farms',
                       data="{\"lb_method\": \"round_robin\"}",
                       headers={'Content-Type': 'text/plain'})
 
@@ -106,7 +119,7 @@ class TestMatchMaker(unittest.TestCase):
 
         res = model.get_farms().items()[0]
         farm_id = res[1].farm_id
-        req_res = requests.delete('http://localhost:666/Emily/farms/' + farm_id)
+        req_res = requests.delete('http://localhost:6669/MiaLB/farms/' + farm_id)
 
         # 200-deleted
         eq_(req_res.status_code, 200)
@@ -118,7 +131,7 @@ class TestMatchMaker(unittest.TestCase):
         # remove all conf files
         self.setup_func()
 
-        requests.post(url='http://localhost:666/Emily/farms',
+        requests.post(url='http://localhost:6669/MiaLB/farms',
                       data="{\"lb_method\": \"round_robin\"}",
                       headers={'Content-Type': 'text/plain'})
 
@@ -126,7 +139,7 @@ class TestMatchMaker(unittest.TestCase):
 
         res = model.get_farms().items()[0]
         farm_id = res[1].farm_id
-        requests.put('http://localhost:666/Emily/farms/' + farm_id,
+        requests.put('http://localhost:6669/MiaLB/farms/' + farm_id,
                      data="{\"port\": "+port+"}",
                      headers={'Content-Type': 'text/plain'})
 
@@ -138,7 +151,7 @@ class TestMatchMaker(unittest.TestCase):
         # remove all conf files
         self.setup_func()
 
-        requests.post(url='http://localhost:666/Emily/farms',
+        requests.post(url='http://localhost:6669/MiaLB/farms',
                       data="{\"lb_method\": \"round_robin\"}",
                       headers={'Content-Type': 'text/plain'})
         model.load_farms()
@@ -148,7 +161,7 @@ class TestMatchMaker(unittest.TestCase):
         farm_members_before = res.members
 
         # create farm member
-        requests.post(url='http://localhost:666/Emily/farms/'+str(farm_id)+'/members',
+        requests.post(url='http://localhost:6669/MiaLB/farms/'+str(farm_id)+'/members',
                       data="{\"url\": \"217684fa-b9c8-406a-b338-5387b3d4f371\","
                            " \"weight\": \"3\"}", headers={'Content-Type': 'text/plain'})
         farm_members_after = model.get_farm(farm_id).members
@@ -161,7 +174,7 @@ class TestMatchMaker(unittest.TestCase):
         # remove all conf files
         self.setup_func()
 
-        requests.post(url='http://localhost:666/Emily/farms',
+        requests.post(url='http://localhost:6669/MiaLB/farms',
                       data="{\"lb_method\": \"round_robin\"}",
                       headers={'Content-Type': 'text/plain'})
         model.load_farms()
@@ -171,10 +184,10 @@ class TestMatchMaker(unittest.TestCase):
         farm_members_before = res.members
 
         # create farm member
-        requests.post(url='http://localhost:666/Emily/farms/' + str(farm_id) + '/members',
+        requests.post(url='http://localhost:6669/MiaLB/farms/' + str(farm_id) + '/members',
                       data="{\"url\": \"217684fa-b9c8-406a-b338-5387b3d4f371\","
                            " \"weight\": \"3\"}", headers={'Content-Type': 'text/plain'})
-        requests.post(url='http://localhost:666/Emily/farms/' + str(farm_id) + '/members',
+        requests.post(url='http://localhost:6669/MiaLB/farms/' + str(farm_id) + '/members',
                       data="{\"url\": \"217684fa-b9c8-406a-b338-5387b3d4f372\","
                            " \"weight\": \"3\"}", headers={'Content-Type': 'text/plain'})
 
@@ -189,7 +202,7 @@ class TestMatchMaker(unittest.TestCase):
         self.setup_func()
 
         # create farm
-        requests.post(url='http://localhost:666/Emily/farms',
+        requests.post(url='http://localhost:6669/MiaLB/farms',
                       data="{\"lb_method\": \"round_robin\"}",
                       headers={'Content-Type': 'text/plain'})
         model.load_farms()
@@ -198,11 +211,11 @@ class TestMatchMaker(unittest.TestCase):
         farm_id = res.farm_id
 
         # create farm member
-        requests.post(url='http://localhost:666/Emily/farms/' + str(farm_id) + '/members',
+        requests.post(url='http://localhost:6669/MiaLB/farms/' + str(farm_id) + '/members',
                       data="{\"url\": \"217684fa-b9c8-406a-b338-5387b3d4f371\","
                            " \"weight\": \"3\"}", headers={'Content-Type': 'text/plain'})
 
-        req_res = requests.get(url='http://localhost:666/Emily/farms/' + str(farm_id) + '/members')
+        req_res = requests.get(url='http://localhost:6669/MiaLB/farms/' + str(farm_id) + '/members')
 
         eq_(req_res.status_code, 200)
 
@@ -213,7 +226,7 @@ class TestMatchMaker(unittest.TestCase):
         self.setup_func()
 
         # create farm
-        requests.post(url='http://localhost:666/Emily/farms',
+        requests.post(url='http://localhost:6669/MiaLB/farms',
                       data="{\"lb_method\": \"round_robin\"}",
                       headers={'Content-Type': 'text/plain'})
         model.load_farms()
@@ -222,13 +235,13 @@ class TestMatchMaker(unittest.TestCase):
         farm_id = str(res.farm_id)
 
         # create farm member
-        requests.post(url='http://localhost:666/Emily/farms/' + farm_id + '/members',
+        requests.post(url='http://localhost:6669/MiaLB/farms/' + farm_id + '/members',
                       data="{\"url\": \"217684fa-b9c8-406a-b338-5387b3d4f371\","
                            " \"weight\": \"3\"}", headers={'Content-Type': 'text/plain'})
 
         member_url = str(model.get_farm(farm_id).members.values()[0].url)
 
-        req_res = requests.get(url='http://localhost:666/Emily/farms/' + farm_id + '/members/' + member_url)
+        req_res = requests.get(url='http://localhost:6669/MiaLB/farms/' + farm_id + '/members/' + member_url)
 
         eq_(req_res.status_code, 200)
 
@@ -239,7 +252,7 @@ class TestMatchMaker(unittest.TestCase):
         self.setup_func()
 
         # create farm
-        requests.post(url='http://localhost:666/Emily/farms',
+        requests.post(url='http://localhost:6669/MiaLB/farms',
                       data="{\"lb_method\": \"round_robin\"}",
                       headers={'Content-Type': 'text/plain'})
         model.load_farms()
@@ -248,12 +261,12 @@ class TestMatchMaker(unittest.TestCase):
         farm_id = str(res.farm_id)
 
         # create farm member
-        requests.post(url='http://localhost:666/Emily/farms/' + farm_id + '/members',
+        requests.post(url='http://localhost:6669/MiaLB/farms/' + farm_id + '/members',
                       data="{\"url\": \"217684fa-b9c8-406a-b338-5387b3d4f371\","
                            " \"weight\": \"3\"}", headers={'Content-Type': 'text/plain'})
 
         member_url = str(model.get_farm(farm_id).members.values()[0].url)
 
-        req_res = requests.delete(url='http://localhost:666/Emily/farms/' + farm_id + '/members/' + member_url)
+        req_res = requests.delete(url='http://localhost:6669/MiaLB/farms/' + farm_id + '/members/' + member_url)
 
         eq_(req_res.status_code, 200)

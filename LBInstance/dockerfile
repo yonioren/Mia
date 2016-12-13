@@ -1,4 +1,5 @@
 FROM server:port/user/nginx
 COPY startup.sh /startup.sh
+COPY update_nginx.sh /update_nginx.sh
 ENV MIALBURI http://mialb/conf.d/
 CMD /startup.sh

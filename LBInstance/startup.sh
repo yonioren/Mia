@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
 uid=`hostname`
-curl -H "Content-Type: application/json" -X POST -d '{"docker_uid": "'${uid}'"}' \
+default_interface=`ip -4 route show | grep default | sed 's/^.*\sdev\s\([^ ]*\)\s.*$/\1/'`
+my_ip=`ip -4 addr show ${default_interface} | grep -e "^\s*inet\s" | sed 's/^\s*inet\s\([0-9\.]*\)\/.*/\1/'`
+
+curl -H "Content-Type: application/json, Client-IP: ${my_ip}" -X POST -d '{"docker_uid": "'${uid}'"}' \
  "${MIALBURI}/MiaLB/farms/${FARMID}/instances"
 curl "${MIALBURI}/${FARMID}.conf" -o /etc/nginx/conf.d/${FARMID}.conf
 flag=1
