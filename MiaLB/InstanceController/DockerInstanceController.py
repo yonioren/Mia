@@ -16,6 +16,7 @@
 import os
 
 from threading import Thread
+import docker
 
 from .SingleInstanceController import SingleInstanceController
 
@@ -25,6 +26,7 @@ class DockerInstanceController(SingleInstanceController):
         SingleInstanceController.__init__(self)
         self.swarm_uri = "connection string to swarm cluster?"
         # TODO: initial something of docker??
+        self.client = docker.DockerClient(base_url='http://localhost:2376')
 
     def set_instance(self, farm_id, instance_id=None):
         Thread(target=super(DockerInstanceController, self).set_instance,
@@ -39,7 +41,9 @@ class DockerInstanceController(SingleInstanceController):
         return os.system("docker kill {}".format(instance_id))
 
     def _create_instance(self, farm_id):
-        return os.popen("docker run -e FARMID={} server:port/user/mia-farm".format(farm_id)).read().strip()
+        return self.client.services.create(image='nginx_for_mia:latest', env='FARMID='+farm_id, name=str(farm_id))
+        #return os.popen("docker run -e FARMID={} server:port/user/mia-farm".format(farm_id)).read().strip()
 
-    def _update_instance(self, instance_id):
-        return os.system("docker exec {} /update_nginx.sh".format(instance_id))
+    def _update_instance(self, farm_id):
+        return self.client.containers.get(self.client.services.get(farm_id).tasks()[0]['Status']['ContainerStatus']['ContainerID']).exec_run(cmd="/update_nginx.sh")
+        #return os.system("docker exec {} /update_nginx.sh".format(instance_id))
