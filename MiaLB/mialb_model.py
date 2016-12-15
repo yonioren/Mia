@@ -58,6 +58,7 @@ class MiaLBModel(object):
         farm.update_farm(args)
         self.create_indexes(farm_id, farm)
         self.controller.commit_farm(farm)
+        self.instance_controller._update_instance(farm_id=farm_id)
         return json.dumps({"farm": farm.__dict__}), 200
 
     def delete_farm(self, farm_id):
@@ -68,6 +69,7 @@ class MiaLBModel(object):
         else:
             self.farms[farm_id] = None
             self.controller.delete_farm(farm_id)
+            self.instance_controller.rem_instance(farm_id=farm_id)
             for key, value in self.indexes.items():
                 if value == farm_id: self.indexes.pop(key)
             return json.dumps({"farm_id": farm_id}), 200
