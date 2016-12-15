@@ -40,10 +40,12 @@ class DockerInstanceController(SingleInstanceController):
 
     def _remove_instance(self, farm_id):
         instance_id = super(DockerInstanceController, self)._remove_instance(farm_id=farm_id)
-        return os.system("docker kill {}".format(instance_id))
+        return self.client.services.get(instance_id).remove()
 
     def _create_instance(self, farm_id):
-        return self.client.services.create(image='nginx_for_mia:latest', env='FARMID='+str(farm_id), name=str(farm_id))
+        return self.client.services.create(image='nginx_for_mia:latest',
+                                           env=['FARMID={}'.format(str(farm_id))],
+                                           name=str(farm_id))
 
     def _update_instance(self, farm_id):
         return self.client.containers.get(
