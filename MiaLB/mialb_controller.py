@@ -17,9 +17,8 @@ DEFAULT_CONF_DIR = "/etc/nginx/conf.d/"
 
 class MiaLBController(object):
     def __init__(self):
-        '''
-        Constructor
-        '''
+        """ Constructor """
+
         self.conf_dir = DEFAULT_CONF_DIR
 
     def load_farms(self):
@@ -46,7 +45,7 @@ class MiaLBController(object):
         members = {}
         while members_args.__len__() > 0:
             item = members_args.popitem()
-            members[item[0]] = FarmMember({'url': item[0], 'weight': item[1]})
+            members[item[0]] = FarmMember(url=item[0], weight=item[1])
         farm_args['members'] = members
         return Farm(farm_id, farm_args)
 
@@ -76,10 +75,10 @@ class MiaLBController(object):
         file_content = ""
         # build the farm members configuration section
         file_content += file_content + 'upstream ' + str(farm.farm_id) + ' {\n'
-        if farm.lb_method != "":
+        if farm.lb_method not in ["", "round_robin"]:
             file_content += '\t' + farm.lb_method + ';\n'
-        for member in farm.members:
-            file_content += '\tserver ' + str(member) + ';\n'
+        for member in farm.members.values():
+            file_content += '\tserver ' + member.conf_representation() + ';\n'
         file_content += '}\n'
         # build the farm configuration section
         file_content += 'server {\n'

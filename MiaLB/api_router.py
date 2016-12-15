@@ -9,6 +9,7 @@ from flask import Flask, make_response
 from mialb_view import MiaLBView
 from mialb_model import MiaLBModel
 import json
+from sys import argv
 
 
 class Mia(Flask):
@@ -26,11 +27,17 @@ class Mia(Flask):
 api_router = Mia(__name__)
 api_router.debug = True
 
+
 @api_router.errorhandler(404)
 def not_found(error):
     return make_response(json.dumps({'error': 'Not found'}), 404)
-    
-#example of how to route
+
+
+# example of how to route
 @api_router.route('/', methods=['GET'])
 def index():
     return json.dumps([{'index': 'main'}, {'supported methods': 'GET'}, {'apidoc': '/apidoc'}])
+
+
+if __name__ == '__main__' or '--run-damn-you' in argv:
+    api_router.run(host='localhost', port=6669)
