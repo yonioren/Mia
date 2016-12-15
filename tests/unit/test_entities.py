@@ -76,24 +76,24 @@ class TestMatchMaker(unittest.TestCase):
         eq_(farm.location, '/right/here')
 
     def test_farm_member_url_valid(self):
-        farm_member = FarmMember({'url': 'http://sdf.sdf:234',
-                                  'weight': 2})
+        farm_member = FarmMember(url='http://sdf.sdf:234',
+                                 weight=2)
         eq_(farm_member.url, 'http://sdf.sdf:234')
 
     def test_farm_member_url_valid2(self):
-        farm_member = FarmMember({'url': 'http://DF.WER',
-                                  'weight': 2})
+        farm_member = FarmMember(url='http://DF.WER',
+                                 weight=2)
         eq_(farm_member.url, 'http://DF.WER')
 
     def test_farm_member_url_valid3(self):
-        farm_member = FarmMember({'url': 'DF.WER:345',
-                                  'weight': 2})
+        farm_member = FarmMember(url='DF.WER:345',
+                                 weight=2)
         eq_(farm_member.url, 'DF.WER:345')
 
     @raises(AttributeError)
     def test_farm_member_url_invalid(self):
-        FarmMember({'url': 'http://DF.WER:sf', 'weight': 2})
+        FarmMember(url='http://DF.WER:sf', weight=2)
 
     @raises(AttributeError)
     def test_farm_member_no_url(self):
-        FarmMember({'weight': 2})
+        FarmMember(weight=2)

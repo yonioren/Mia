@@ -43,7 +43,7 @@ class DockerInstanceController(SingleInstanceController):
         return os.system("docker kill {}".format(instance_id))
 
     def _create_instance(self, farm_id):
-        return self.client.services.create(image='nginx_for_mia:latest', env='FARMID='+farm_id, name=str(farm_id))
+        return self.client.services.create(image='nginx_for_mia:latest', env='FARMID='+str(farm_id), name=str(farm_id))
 
     def _update_instance(self, farm_id):
         return self.client.containers.get(

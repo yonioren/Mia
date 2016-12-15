@@ -34,9 +34,9 @@ class TestMatchMaker(unittest.TestCase):
         model = MiaLBModel()
         farms_len_before = len(model.get_farms())
 
-        requests.post('http://localhost:6669/MiaLB/farms',
-                      [('Content-Type', 'application/json')],
-                      {'lb_method': 'round_robin'})
+        requests.post(url='http://localhost:6669/MiaLB/farms',
+                      headers={'Content-Type': 'application/json'},
+                      data='{"lb_method": "round_robin"}')
 
         model.load_farms()
         farms_len_after = len(model.get_farms())

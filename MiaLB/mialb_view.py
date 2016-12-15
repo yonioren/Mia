@@ -102,7 +102,7 @@ class MiaLBView:
                 raise Exception("couldn't parse request {} as json".format(str(request.data)))
         else:
             logger.debug("unknown content type: %s" % request.headers['Content-Type'])
-            raise("unknown content type: %s" % request.headers['Content-Type'])
+            raise Exception("unknown content type: {}".format(request.headers['Content-Type']))
         
     def view_api(self):
         routes = [
