@@ -14,9 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
+import docker
 
 from threading import Thread
 from requests import get
+
 
 from .SingleInstanceController import SingleInstanceController
 
@@ -26,6 +28,7 @@ class DockerInstanceController(SingleInstanceController):
         SingleInstanceController.__init__(self)
         self.swarm_uri = "connection string to swarm cluster?"
         # TODO: initial something of docker??
+        self.client = docker.DockerClient(base_url='http://localhost:2376')
 
     def set_instance(self, farm_id, instance_id=None):
         Thread(target=super(DockerInstanceController, self).set_instance,
@@ -40,10 +43,9 @@ class DockerInstanceController(SingleInstanceController):
         return os.system("docker kill {}".format(instance_id))
 
     def _create_instance(self, farm_id):
-        instance_id = os.popen("docker run -e FARMID={} server:port/user/mia-farm".format(farm_id)).read().strip()
-        # now we want to add an interface
-        os.system("docker ")
-        return instance_id
+        return self.client.services.create(image='nginx_for_mia:latest', env='FARMID='+farm_id, name=str(farm_id))
 
-    def _update_instance(self, instance_id):
-        return os.system("docker exec {} /update_nginx.sh".format(instance_id))
+    def _update_instance(self, farm_id):
+        return self.client.containers.get(
+            self.client.services.get(farm_id).tasks()[0]['Status']['ContainerStatus']['ContainerID']).\
+            exec_run(cmd="/update_nginx.sh")

@@ -9,7 +9,7 @@ import json
 from logging import getLogger
 
 from MiaLB.mialb_entities import logger
-from MiaLB  .mialb_model import MiaLBModel
+from MiaLB.mialb_model import MiaLBModel
 from flask import request
 from flask.helpers import make_response
 

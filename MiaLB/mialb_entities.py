@@ -172,10 +172,10 @@ if __name__ == '__main__':
                  'port': 443,
                  'location': '/right/here',
                  'protocol': 'https',
-                 'ip': '190.20.18.139'})
+                 'ip': '192.168.0.1'})
     print(str(farm))
     print(" adding member")
-    member = FarmMember(url='http://lnx-int-yum-1:6793', weight=2)
+    member = FarmMember(url='http://cool-hostname:6793', weight=2)
     farm.add_member(member)
     print(member)
     print(str(farm))
