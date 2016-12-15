@@ -39,6 +39,8 @@ class Mia(Flask):
 
     @staticmethod
     def _config_logger():
+        logging.getLogger(__name__)
+
         cp = ConfigParser()
         conf_file_order = ['/etc/Mia/mialb.conf', '~/.Mia/mialb.conf', '/software/Mia/LB/mialb.conf']
         while not cp.read(conf_file_order):

@@ -13,10 +13,6 @@ import uuid
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename=str(os.path.dirname(os.path.abspath(__file__))) + '/../tests/unit/MiaLogs.log',
-                    format='[%(asctime)s] [%(levelname)s] %(module)s - %(funcName)s:   %(message)s',
-                    level=logging.DEBUG,
-                    datefmt='%m/%d/%Y %I:%M:%S %p')
 
 PROTOCOLS = ['HTTP', 'HTTPS' 'FTP']
 MIN_PORT = 0
