@@ -31,7 +31,7 @@ class Mia(Flask):
         self.view = MiaLBView(self.model)
         self.route_view()
         self._config_logger()
-        
+
     def route_view(self):
         view_routes = self.view.view_api() 
         for v_route in view_routes:
@@ -41,11 +41,9 @@ class Mia(Flask):
     def _config_logger():
         logging.getLogger(__name__)
 
-        cp = ConfigParser()
         conf_file_order = ['/etc/Mia/mialb.conf', '~/.Mia/mialb.conf', '/software/Mia/LB/mialb.conf']
-        while not cp.read(conf_file_order):
-            pass
-
+        cp = ConfigParser()
+        cp.read(filenames=conf_file_order)
         try:
             logfile = cp.get(section='default', option='logfile')
         except Exception:
