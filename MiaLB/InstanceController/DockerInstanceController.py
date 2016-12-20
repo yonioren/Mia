@@ -16,19 +16,37 @@
 import os
 import docker
 
+from logging import getLogger
 from threading import Thread
+from re import sub
 from requests import get
-
 
 from .SingleInstanceController import SingleInstanceController
 
+logger = getLogger(__name__)
+
+
+def _guess_MiaLB_url():
+    print("my pid is {}".format(str(os.getpid())))
+    print("netstat output is {}".format(str(os.popen("netstat -4 -tlnp | grep -e '\s{}/'".format(
+        str(os.getpid()))).read())))
+    protocol, inq, outq, local_addr, foreign_addr, state, process = \
+        os.popen("netstat -4 -tlnp | grep -e '\s{}/'".format(str(os.getpid()))).readlines()[0].split()
+    # guess my public ip
+    temp = os.popen("ip route show | grep default").read().split()
+    public_device = temp[temp.index('dev') + 1]
+    temp = os.popen("ip -4 addr show {} | grep inet".format(public_device)).read.split()
+    public_address = temp[temp.index('inet') + 1]
+    local_addr = sub('0.0.0.0', public_address, local_addr)
+
+    return "http://{}".format(local_addr)
+
 
 class DockerInstanceController(SingleInstanceController):
-    def __init__(self):
+    def __init__(self, mialb_url=None):
         SingleInstanceController.__init__(self)
-        self.swarm_uri = "connection string to swarm cluster?"
-        # TODO: initial something of docker??
         self.client = docker.DockerClient(base_url='http://localhost:2376')
+        self.mialb_url = mialb_url if mialb_url else None
 
     def set_instance(self, farm_id, instance_id=None):
         Thread(target=super(DockerInstanceController, self).set_instance,
@@ -43,11 +61,20 @@ class DockerInstanceController(SingleInstanceController):
         return self.client.services.get(instance_id).remove()
 
     def _create_instance(self, farm_id):
+        if self.mialb_url is None:
+            self.mialb_url = _guess_MiaLB_url()
         return self.client.services.create(image='nginx_for_mia:latest',
-                                           env=['FARMID={}'.format(str(farm_id))],
+                                           env=['FARMID={}'.format(str(farm_id)),
+                                                'MIALBURI={}'.format(str(self.mialb_url))],
                                            name=str(farm_id))
 
     def _update_instance(self, farm_id):
-        return self.client.containers.get(
-            self.client.services.get(farm_id).tasks()[0]['Status']['ContainerStatus']['ContainerID']).\
-            exec_run(cmd="/update_nginx.sh")
+        if self.mialb_url is None:
+            self.mialb_url = _guess_MiaLB_url()
+        # we'll get here when an instance reports it's up and waiting for eth1
+        external_ip = get(
+            url="{mialb_uri}/MiaLB/farms/{farm_id}".format(mialb_uri=self.mialb_url, farm_id=farm_id)
+        ).json()['ip']
+        container_id = self.client.services.get(farm_id).tasks()[0]['Status']['ContainerStatus']['ContainerID']
+        self.client.networks.get("services").connect(container=container_id, ipv4_address=external_ip)
+        self.client.containers.get(container_id=container_id).exec_run(cmd="/update_nginx.sh")

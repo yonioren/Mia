@@ -4,6 +4,7 @@ import requests
 
 from nose.tools import *
 from subprocess import Popen
+from time import sleep
 
 from MiaLB.mialb_model import MiaLBModel
 # from MiaLB.api_router import api_router
@@ -16,6 +17,7 @@ class TestMatchMaker(unittest.TestCase):
         server_path = os.path.join(os.path.dirname(__file__), '../../MiaLB/api_router.py')
         print(server_path)
         cls.server = Popen(['/usr/bin/python2.7', server_path, '--run-damn-you'])
+        sleep(1)
 
     @classmethod
     def tearDownClass(cls):
