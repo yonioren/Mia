@@ -20,7 +20,8 @@ class SingleInstanceController(object):
     def __init__(self):
         self.relation = {}
 
-    def set_instance(self, farm_id, **kwargs):
+    def set_instance(self, **kwargs):
+        farm_id = kwargs['farm_id']
         if 'instance_id' not in kwargs:
             instance_id = self._create_instance(farm_id)
         else:

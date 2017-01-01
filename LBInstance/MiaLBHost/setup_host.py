@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from docker import from_env as docker_from_env
+from docker.errors import NotFound
 from docker.types import IPAMConfig, IPAMPool
 
 from LBHostConfig import get_config
@@ -30,8 +31,16 @@ def setup(**kwargs):
 
     poolargs = {}
 
-    net_name = kwargs['docker_network'] if 'docker_network' in kwargs else configs['net_name']
-    poolargs['subnet'] = kwargs['cidr'] if 'cidr' in kwargs else configs['subnet']
-    poolargs['gateway'] = kwargs['gateway'] if 'gateway' in kwargs else configs['gateway']
+    net_name = kwargs['docker_network'] \
+        if 'network' in kwargs and kwargs['network'] is not None else configs['net_name']
+    poolargs['subnet'] = kwargs['cidr'] \
+        if 'cidr' in kwargs and kwargs['cidr'] is not None else configs['subnet']
+    poolargs['gateway'] = kwargs['gateway'] \
+        if 'gateway' in kwargs and kwargs['gateway'] is not None else configs['gateway']
 
-    dclient.networks.create(name=net_name, driver="bridge", ipam=IPAMConfig(pool_configs=[IPAMPool(**poolargs)]))
+    try:
+        dclient.networks.get(net_name).attrs['IPAM']['Config'] = IPAMConfig(pool_configs=[IPAMPool(**poolargs)])
+    except NotFound:
+        dclient.networks.create(name=net_name,
+                                driver="bridge",
+                                ipam=IPAMConfig(pool_configs=[IPAMPool(**poolargs)]))

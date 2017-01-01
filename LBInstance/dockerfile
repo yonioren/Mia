@@ -1,6 +1,8 @@
-FROM server:port/user/nginx
+FROM nginx
 COPY startup.sh /startup.sh
 COPY update_nginx.sh /update_nginx.sh
-COPY networkconf.py /usr/bin/networkconf.py
+# COPY networkconf.py /usr/bin/networkconf.py
 ENV MIALBURI http://mialb/conf.d/
+RUN apt-get update
+RUN apt-get install curl
 CMD /startup.sh

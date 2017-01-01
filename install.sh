@@ -19,6 +19,10 @@ systemctl daemon-reload
 systemctl enable docker.service ; systemctl start docker.service
 swarmIp=`ip -4 addr show | grep inet | \
   sed 's/^\s*inet\s*\([0-9\.]*\).*$/\1/' | grep -v -e "127.\([0-9]*\.\)\{2\}" | head -1`
+
+# leave existing swarm, if a member
+docker swarm leave --force
+
 docker swarm init --advertise-addr ${swarmIp}
 token=`docker swarm join-token --quiet worker`
 nodeId=`docker node ls | grep -e "\*" | cut -d' ' -f1`
@@ -50,14 +54,16 @@ setsebool -P httpd_can_network_connect 1
 
 # build docker image
 docker build -t nginx_for_mia:latest LBInstance
-docker save nginx_for_mia:latest /tmp/nginx_for_mia.tar
+docker save nginx_for_mia:latest -o /tmp/nginx_for_mia.tar
 
 # set up docker hosts
 for host in `cat conf/hosts`
 do
+    ssh ${host} "mkdir -p /etc/Mia/"
+    scp conf/mialb.conf ${host}:/etc/Mia/
     scp install_docker_host.sh /tmp/nginx_for_mia.tar ${host}:/tmp/
     scp LBInstance/docker_networking.py ${host}:/usr/bin/
-    spc -R LBInstance/MiaLBHost ${host}:/usr/lib/python2.7/site-packages/
+    scp -r LBInstance/MiaLBHost ${host}:/usr/lib/python2.7/site-packages/
     ssh ${host} "bash /tmp/install_docker_host.sh --token ${token} --address ${swarmIp}:2377"
     newId=`ssh ${host} docker node inspect --pretty self | grep ID | awk '{print $2}'`
     docker node update --availability active ${newId}
