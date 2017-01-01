@@ -36,6 +36,18 @@ systemctl enable docker.service ; systemctl start docker.service
 # join swarm cluster
 docker swarm join --token ${token} ${address}
 
+# load nginx image
+docker load /tmp/nginx_for_mia.tar
+
 # set up networks
 brctl addbr br1
-docker network create --driver bridge
+brctl addif br1 eth1
+networkId=$(docker network create --driver bridge services)
+ip link set br-${networkId} up
+ip link add veth-${networkId}-br1 type veth peer veth-br1-${networkId} type veth
+ip link set veth-${networkId}-br1 up
+ip link set veth-br1-${networkId} up
+brctl addif br-${networkId} veth-${networkId}-br1
+brctl addif br1 veth-br1-${networkId}
+
+python /usr/bin/docker_networking.py setup

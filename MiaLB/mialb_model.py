@@ -1,9 +1,17 @@
 #! /usr/bin/python
-'''
-Created on Apr 24, 2016
+# Copyright (C) 2016 Eitan Geiger
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-@author: geiger
-'''
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json
 import uuid
@@ -32,9 +40,9 @@ class MiaLBModel(object):
         return self.farms
     
     def get_farm(self, farm_id):
-        if self.indexes.has_key(farm_id):
+        if farm_id in self.indexes:
             farm_id = self.indexes[farm_id]
-        if self.farms.has_key(farm_id):
+        if farm_id in self.farms:
             self.farms[farm_id] = self.controller.load_farm(farm_id)
         else:
             self.farms = self.controller.load_farms()
@@ -108,7 +116,7 @@ class MiaLBModel(object):
         if self.get_farm(farm_id) is None:
             return json.dumps({"error": "farm not found"}), 404
         instance_id = args["docker_uid"]
-        self.instance_controller.set_instance(farm_id=farm_id, instance_id=instance_id)
+        self.instance_controller.set_instance(farm_id=farm_id, instance_id=instance_id, host_ip=args['remote_addr'])
 
     def generate_farm_id(self):
         uid = uuid.uuid4() 
@@ -126,4 +134,3 @@ if __name__ == '__main__':
     print(str(model))
     for farm in model.get_farms().values():
         print(str(farm))
-    

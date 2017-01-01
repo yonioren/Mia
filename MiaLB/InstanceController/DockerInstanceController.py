@@ -48,9 +48,8 @@ class DockerInstanceController(SingleInstanceController):
         self.client = docker.DockerClient(base_url='http://localhost:2376')
         self.mialb_url = mialb_url if mialb_url else None
 
-    def set_instance(self, farm_id, instance_id=None):
-        Thread(target=super(DockerInstanceController, self).set_instance,
-               kwargs={'farm_id': farm_id, 'instance_id': instance_id}).start()
+    def set_instance(self, **kwargs):
+        Thread(target=super(DockerInstanceController, self).set_instance, **kwargs).start()
 
     def rem_instance(self, farm_id=None, instance_id=None):
         Thread(target=super(DockerInstanceController, self).rem_instance,
@@ -68,13 +67,16 @@ class DockerInstanceController(SingleInstanceController):
                                                 'MIALBURI={}'.format(str(self.mialb_url))],
                                            name=str(farm_id))
 
-    def _update_instance(self, farm_id):
+    def _update_instance(self, farm_id, **kwargs):
         if self.mialb_url is None:
             self.mialb_url = _guess_MiaLB_url()
+        # we must have host address, because docker sucks!
+        host_address = kwargs['remote_addr']
         # we'll get here when an instance reports it's up and waiting for eth1
         external_ip = get(
             url="{mialb_uri}/MiaLB/farms/{farm_id}".format(mialb_uri=self.mialb_url, farm_id=farm_id)
         ).json()['ip']
         container_id = self.client.services.get(farm_id).tasks()[0]['Status']['ContainerStatus']['ContainerID']
-        self.client.networks.get("services").connect(container=container_id, ipv4_address=external_ip)
-        self.client.containers.get(container_id=container_id).exec_run(cmd="/update_nginx.sh")
+        os.system("ssh {host} 'python2.7 /usr/bin/docker_networking.py connect --container {contiainer_id} --ip {ip}'"
+                  "".format(host=host_address, contiainer_id=container_id, ip=external_ip))
+
