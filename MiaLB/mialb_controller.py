@@ -55,7 +55,7 @@ class MiaLBController(object):
         destination.write(unicode(file_content))
         destination.close()
         # infrom nginx about the changes
-        system("nginx -s reload")
+        # system("nginx -s reload")
     
     def delete_farm(self, farm_id):
         filename = str(self.conf_dir) + str(farm_id) + ".conf"

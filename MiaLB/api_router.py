@@ -48,10 +48,13 @@ class Mia(Flask):
             logfile = cp.get(section='default', option='logfile')
         except Exception:
             logfile = str(os.path.dirname(os.path.abspath(__file__))) + '/../tests/unit/MiaLogs.log'
-
+        try:
+            loglevel = cp.get(section='default', option='loglevel')
+        except Exception:
+            loglevel = 'WARNNING'
         logging.basicConfig(filename=logfile,
                             format='[%(asctime)s] [%(levelname)s] %(module)s - %(funcName)s:   %(message)s',
-                            level=logging.DEBUG,
+                            level=loglevel,
                             datefmt='%m/%d/%Y %I:%M:%S %p')
 
 api_router = Mia(__name__)
