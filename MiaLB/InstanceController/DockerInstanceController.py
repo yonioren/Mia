@@ -35,9 +35,9 @@ def _guess_MiaLB_url():
     # guess my public ip
     temp = os.popen("ip route show | grep default").read().split()
     public_device = temp[temp.index('dev') + 1]
-    temp = os.popen("ip -4 addr show {} | grep inet".format(public_device)).read.split()
+    temp = os.popen("ip -4 addr show {} | grep inet".format(public_device)).read().split()
     public_address = temp[temp.index('inet') + 1]
-    local_addr = sub('0.0.0.0', public_address, local_addr)
+    local_addr = sub('(0.0.0.0|127.0.0.1)', public_address, local_addr)
 
     return "http://{}".format(local_addr)
 
@@ -49,7 +49,7 @@ class DockerInstanceController(SingleInstanceController):
         self.mialb_url = mialb_url if mialb_url else None
 
     def set_instance(self, **kwargs):
-        Thread(target=super(DockerInstanceController, self).set_instance, **kwargs).start()
+        Thread(target=super(DockerInstanceController, self).set_instance, kwargs=kwargs).start()
 
     def rem_instance(self, farm_id=None, instance_id=None):
         Thread(target=super(DockerInstanceController, self).rem_instance,
@@ -71,7 +71,7 @@ class DockerInstanceController(SingleInstanceController):
         if self.mialb_url is None:
             self.mialb_url = _guess_MiaLB_url()
         # we must have host address, because docker sucks!
-        host_address = kwargs['remote_addr']
+        host_address = kwargs['host_ip']
         # we'll get here when an instance reports it's up and waiting for eth1
         external_ip = get(
             url="{mialb_uri}/MiaLB/farms/{farm_id}".format(mialb_uri=self.mialb_url, farm_id=farm_id)

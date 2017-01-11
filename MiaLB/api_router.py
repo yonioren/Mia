@@ -73,4 +73,13 @@ def index():
 
 
 if __name__ == '__main__' or '--run-damn-you' in argv:
-    api_router.run(host='localhost', port=6669)
+    conf_file_order = ['/etc/Mia/mialb.conf', '~/.Mia/mialb.conf', '/software/Mia/LB/mialb.conf']
+    cp = ConfigParser()
+    cp.read(filenames=conf_file_order)
+    try:
+        host = cp.get(section='server', option='host')
+        port = cp.get(section='server', option='port')
+    except Exception:
+        host = 'localhost'
+        port = 6669
+    api_router.run(host=host, port=port)

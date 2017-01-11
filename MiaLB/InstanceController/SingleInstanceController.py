@@ -24,11 +24,11 @@ class SingleInstanceController(object):
 
     def set_instance(self, **kwargs):
         logger.debug("SingleInstanceController.set_instance({kwargs})".format(kwargs=str(kwargs)))
-        farm_id = kwargs['farm_id']
+        farm_id = kwargs.pop('farm_id')
         if 'instance_id' not in kwargs:
             instance_id = self._create_instance(farm_id)
         else:
-            self._update_instance(kwargs['instance_id'])
+            self._update_instance(farm_id, **kwargs)
         if farm_id in self.relation:
             self._remove_instance(farm_id)
         self.relation[farm_id] = [instance_id]
@@ -51,7 +51,12 @@ class SingleInstanceController(object):
 
     def _remove_instance(self, farm_id):
         logger.debug("SingleInstanceController._remove_instance({farm_id})".format(farm_id=str(farm_id)))
-        return self.relation.pop(farm_id)
+        try:
+            return self.relation.pop(farm_id)
+        except KeyError:
+            logger.error("key error popping {farm_id}. relatiation: {relation}".format(
+                farm_id = farm_id, relation = str(self.relation)
+        ))
 
     def _create_instance(self, farm_id):
         logger.debug("SingleInstanceController._create_instance({farm_id})".format(farm_id=str(farm_id)))

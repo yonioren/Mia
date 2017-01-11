@@ -9,7 +9,7 @@ from io import open
 from logging import getLogger
 from os import remove, system, listdir
 
-from .mialb_entities import FarmMember, Farm, logger
+from mialb_entities import FarmMember, Farm, logger
 
 logger = getLogger(__name__)
 DEFAULT_CONF_DIR = "/etc/nginx/conf.d/"

@@ -4,6 +4,8 @@ uid=`hostname`
 default_interface=`ip -4 route show | grep default | sed 's/^.*\sdev\s\([^ ]*\)\s.*$/\1/'`
 my_ip=`ip -4 addr show ${default_interface} | grep -e "^\s*inet\s" | sed 's/^\s*inet\s\([0-9\.]*\)\/.*/\1/'`
 
+MIALBURI=$(echo ${MIALBURI} | sed 's@\([^:]\)//@\1/@g ; s@/$@@')
+
 curl "${MIALBURI}/configs/${FARMID}.conf" -o /etc/nginx/conf.d/${FARMID}.conf
 external_ip=$(grep -e "^[^\#]*proxy_pass " /etc/nginx/conf.d/${FARMID}.conf | \
   sed 's/^.*proxy_pass \([0-9\.]*\)[: \s;].*$/\1/')
