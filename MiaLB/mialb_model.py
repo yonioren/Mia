@@ -1,16 +1,24 @@
 #! /usr/bin/python
-'''
-Created on Apr 24, 2016
+# Copyright (C) 2016 Eitan Geiger
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-@author: geiger
-'''
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json
-
-from .InstanceController.DockerInstanceController import DockerInstanceController
-from .mialb_controller import MiaLBController
-from .mialb_entities import Farm
 import uuid
+
+from MiaLB.InstanceController.DockerInstanceController import DockerInstanceController
+from MiaLB.mialb_controller import MiaLBController
+from MiaLB.mialb_entities import Farm
 
 
 class MiaLBModel(object):
@@ -32,9 +40,9 @@ class MiaLBModel(object):
         return self.farms
     
     def get_farm(self, farm_id):
-        if self.indexes.has_key(farm_id):
+        if farm_id in self.indexes:
             farm_id = self.indexes[farm_id]
-        if self.farms.has_key(farm_id):
+        if farm_id in self.farms:
             self.farms[farm_id] = self.controller.load_farm(farm_id)
         else:
             self.farms = self.controller.load_farms()
@@ -50,6 +58,7 @@ class MiaLBModel(object):
         self.farms[farm_id] = new_farm
         self.create_indexes(farm_id, new_farm)
         self.controller.commit_farm(new_farm)
+        self.instance_controller.set_instance(farm_id=farm_id)
         return json.dumps({"farm": json.dumps(new_farm.__dict__)}), 201
         
     def update_farm(self, farm_id, args):
@@ -57,6 +66,7 @@ class MiaLBModel(object):
         farm.update_farm(args)
         self.create_indexes(farm_id, farm)
         self.controller.commit_farm(farm)
+        self.instance_controller._update_instance(farm_id=farm_id)
         return json.dumps({"farm": farm.__dict__}), 200
 
     def delete_farm(self, farm_id):
@@ -67,6 +77,7 @@ class MiaLBModel(object):
         else:
             self.farms[farm_id] = None
             self.controller.delete_farm(farm_id)
+            self.instance_controller.rem_instance(farm_id=farm_id)
             for key, value in self.indexes.items():
                 if value == farm_id: self.indexes.pop(key)
             return json.dumps({"farm_id": farm_id}), 200
@@ -81,11 +92,12 @@ class MiaLBModel(object):
             return json.dumps({"error": "farm not found"}), 404
         return self.get_farm(farm_id).get_member(member_id)
     
-    def create_farm_member(self, farm_id, args):
+    def create_farm_member(self, farm_id, **kwargs):
         if self.get_farm(farm_id) is None:
             return json.dumps({"error": "farm not found"}), 404
         farm = self.get_farm(farm_id)
-        farm.add_member(args)
+        # if the request came from docker, we want to get the address from docker inspect
+        farm.add_member(kwargs)
         self.controller.commit_farm(farm)
         return "member was added to farm", 201
 
@@ -103,9 +115,9 @@ class MiaLBModel(object):
     def create_farm_instance(self, farm_id, args):
         if self.get_farm(farm_id) is None:
             return json.dumps({"error": "farm not found"}), 404
-        instance_id = args["instance_id"]
-        self.instance_controller.set_instance(farm_id=farm_id, instance_id=instance_id)
-    
+        instance_id = args["docker_uid"]
+        self.instance_controller.set_instance(farm_id=farm_id, instance_id=instance_id, host_ip=args['remote_addr'])
+
     def generate_farm_id(self):
         uid = uuid.uuid4() 
         while self.get_farm(uuid) is not None:
@@ -122,4 +134,3 @@ if __name__ == '__main__':
     print(str(model))
     for farm in model.get_farms().values():
         print(str(farm))
-    

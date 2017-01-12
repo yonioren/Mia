@@ -1,16 +1,26 @@
 #! /usr/bin/python
-'''
-Created on Apr 24, 2016
+# Copyright (C) 2016 Eitan Geiger
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-@author: geiger
-'''
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import json
+
+from flask import request
+from flask.helpers import make_response
 from logging import getLogger
 
-from .mialb_entities import logger
-from .mialb_model import MiaLBModel
-from flask import request
-import json
-from flask.helpers import make_response
+from MiaLB.mialb_entities import logger
+from MiaLB.mialb_model import MiaLBModel
 
 logger = getLogger(__name__)
 
@@ -61,8 +71,12 @@ class MiaLBView:
             return json.dumps(members_json)
 
         elif request.method == 'POST':
-            args = self.request_data(request)
-            return make_response(self.model.create_farm_member(farm_id, args))
+            kwargs = self.request_data(request)
+            if 'Client-IP' in request.headers:
+                kwargs['ip'] = request.headers['Client-IP']
+            if 'Client-Port' in request.headers:
+                kwargs['port'] = request.headers['Client-Port']
+            return make_response(self.model.create_farm_member(farm_id, **kwargs))
         else:
             logger.debug("unknown method: %s" % request.method.to_string())
             raise("in MiaLBView.farm_members_api, unknown method: %s" % request.method.to_string())
@@ -81,6 +95,7 @@ class MiaLBView:
             pass
         elif request.method == 'POST':
             args = self.request_data(request)
+            args['remote_addr'] = request.remote_addr
             return json.dumps(self.model.create_farm_instance(farm_id, args))
         else:
             logger.debug("unknown method: {}".format(request.method.to_string()))
@@ -97,7 +112,7 @@ class MiaLBView:
                 raise Exception("couldn't parse request {} as json".format(str(request.data)))
         else:
             logger.debug("unknown content type: %s" % request.headers['Content-Type'])
-            raise("unknown content type: %s" % request.headers['Content-Type'])
+            raise Exception("unknown content type: {}".format(request.headers['Content-Type']))
         
     def view_api(self):
         routes = [

@@ -9,7 +9,7 @@ from io import open
 from logging import getLogger
 from os import remove, system, listdir
 
-from .mialb_entities import FarmMember, Farm, logger
+from mialb_entities import FarmMember, Farm, logger
 
 logger = getLogger(__name__)
 DEFAULT_CONF_DIR = "/etc/nginx/conf.d/"
@@ -17,9 +17,8 @@ DEFAULT_CONF_DIR = "/etc/nginx/conf.d/"
 
 class MiaLBController(object):
     def __init__(self):
-        '''
-        Constructor
-        '''
+        """ Constructor """
+
         self.conf_dir = DEFAULT_CONF_DIR
 
     def load_farms(self):
@@ -37,7 +36,7 @@ class MiaLBController(object):
         try:
             conf_file = open(filename, 'r')
         except IOError:
-            logger.info("In Emily_Controller.load_farm(farm_id: %s ): file not found" % farm_id)
+            logger.info("In MiaLB_Controller.load_farm(farm_id: %s ): file not found" % farm_id)
             return False
 
         file_content = str(conf_file.read()).split()
@@ -46,7 +45,7 @@ class MiaLBController(object):
         members = {}
         while members_args.__len__() > 0:
             item = members_args.popitem()
-            members[item[0]] = FarmMember({'url': item[0], 'weight': item[1]})
+            members[item[0]] = FarmMember(url=item[0], weight=item[1])
         farm_args['members'] = members
         return Farm(farm_id, farm_args)
 
@@ -56,7 +55,7 @@ class MiaLBController(object):
         destination.write(unicode(file_content))
         destination.close()
         # infrom nginx about the changes
-        system("nginx -s reload")
+        # system("nginx -s reload")
     
     def delete_farm(self, farm_id):
         filename = str(self.conf_dir) + str(farm_id) + ".conf"
@@ -65,7 +64,7 @@ class MiaLBController(object):
         except OSError as e:
             # file not found error
             if e.errno == errno.ENOENT:
-                logger.info("In Emily_Controller.delete_farm(farm_id: %s ): file not found" % farm_id)
+                logger.info("In MiaLB_Controller.delete_farm(farm_id: %s ): file not found" % farm_id)
             else:
                 raise e
         # infrom nginx about the changes
@@ -76,10 +75,10 @@ class MiaLBController(object):
         file_content = ""
         # build the farm members configuration section
         file_content += file_content + 'upstream ' + str(farm.farm_id) + ' {\n'
-        if farm.lb_method != "":
+        if farm.lb_method not in ["", "round_robin"]:
             file_content += '\t' + farm.lb_method + ';\n'
-        for member in farm.members:
-            file_content += '\tserver ' + str(member) + ';\n'
+        for member in farm.members.values():
+            file_content += '\tserver ' + member.conf_representation() + ';\n'
         file_content += '}\n'
         # build the farm configuration section
         file_content += 'server {\n'
@@ -109,16 +108,16 @@ class MiaLBController(object):
                     self.parsing_upstream(content, farm_args, members_args)
                 else:
                     logger.debug("after upstream expected {, instead got %s " % head)
-                    raise "In Emily_Controller.parsing_begin: after upstream expected {, instead got %s " % head
+                    raise "In MiaLB_Controller.parsing_begin: after upstream expected {, instead got %s " % head
             elif head == 'server':
                 if str(content.pop()) == '{':
                     self.parsing_server(content, farm_args, members_args)
                 else:
                     logger.debug("after server expected {, instead got %s " % head)
-                    raise "In Emily_Controller.parsing_begin: after server expected {, instead got %s " % head
+                    raise "In MiaLB_Controller.parsing_begin: after server expected {, instead got %s " % head
             else:
                 logger.debug("unknown word %s " % head)
-                raise "In Emily_Controller.parsing_begin: unknown word %s " % head
+                raise "In MiaLB_Controller.parsing_begin: unknown word %s " % head
 
     def parsing_upstream(self, content, farm_args, members_args):
         while content:
@@ -131,7 +130,7 @@ class MiaLBController(object):
                 return True
             else:
                 logger.debug("unknown word %s " % head)
-                raise("In Emily_Controller.parsing_upstream: unknown word %s " % head)
+                raise("In MiaLB_Controller.parsing_upstream: unknown word %s " % head)
     
     @staticmethod
     def parsing_member(content, farm_args, members_args):
@@ -145,7 +144,7 @@ class MiaLBController(object):
                 members_args[head] = weight.split('=')[1]
             else:
                 logger.debug("unknown word %s , expected ; or weight" % weight)
-                raise("In Emily_Controller.parsing_member: unknown word %s , expected ; or weight" % weight)
+                raise("In MiaLB_Controller.parsing_member: unknown word %s , expected ; or weight" % weight)
     
     def parsing_server(self, content, farm_args, members_args):
         while content:
@@ -166,12 +165,12 @@ class MiaLBController(object):
                     self.parsing_location(content, farm_args, members_args)
                 else:
                     logger.debug("after location expected {, instead got %s " % head)
-                    raise "In Emily_Controller.parsing_server: after location expected {, instead got %s " % head
+                    raise "In MiaLB_Controller.parsing_server: after location expected {, instead got %s " % head
             elif head == '}':
                 return True
             else:
                 logger.debug("unknown word %s " % head)
-                raise "In Emily_Controller.parsing_server: unknown word %s " % head
+                raise "In MiaLB_Controller.parsing_server: unknown word %s " % head
 
     @staticmethod
     def parsing_location(content, farm_args, members_args):
@@ -185,7 +184,7 @@ class MiaLBController(object):
                 return True
             else:
                 logger.debug("expected proxy_pass, instead got %s " % head)
-                raise "In Emily_Controller.parsing_location: expected proxy_pass, instead got %s " % head
+                raise "In MiaLB_Controller.parsing_location: expected proxy_pass, instead got %s " % head
 
 # unit tests
 if __name__ == '__main__':
