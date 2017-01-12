@@ -15,12 +15,11 @@
 
 import json
 import logging
-import os
 
-from configparser import ConfigParser
 from flask import Flask, make_response
-from mialb_view import MiaLBView
+from mialb_configs import *
 from mialb_model import MiaLBModel
+from mialb_view import MiaLBView
 from sys import argv
 
 
@@ -40,18 +39,6 @@ class Mia(Flask):
     @staticmethod
     def _config_logger():
         logging.getLogger(__name__)
-
-        conf_file_order = ['/etc/Mia/mialb.conf', '~/.Mia/mialb.conf', '/software/Mia/LB/mialb.conf']
-        cp = ConfigParser()
-        cp.read(filenames=conf_file_order)
-        try:
-            logfile = cp.get(section='default', option='logfile')
-        except Exception:
-            logfile = str(os.path.dirname(os.path.abspath(__file__))) + '/../tests/unit/MiaLogs.log'
-        try:
-            loglevel = cp.get(section='default', option='loglevel')
-        except Exception:
-            loglevel = 'WARNNING'
         logging.basicConfig(filename=logfile,
                             format='[%(asctime)s] [%(levelname)s] %(module)s - %(funcName)s:   %(message)s',
                             level=loglevel,
@@ -73,13 +60,4 @@ def index():
 
 
 if __name__ == '__main__' or '--run-damn-you' in argv:
-    conf_file_order = ['/etc/Mia/mialb.conf', '~/.Mia/mialb.conf', '/software/Mia/LB/mialb.conf']
-    cp = ConfigParser()
-    cp.read(filenames=conf_file_order)
-    try:
-        host = cp.get(section='server', option='host')
-        port = cp.get(section='server', option='port')
-    except Exception:
-        host = 'localhost'
-        port = 6669
-    api_router.run(host=host, port=port)
+    api_router.run(host=host, port=int(port))

@@ -28,9 +28,7 @@ class SingleInstanceController(object):
         if 'instance_id' not in kwargs:
             instance_id = self._create_instance(farm_id)
         else:
-            self._update_instance(farm_id, **kwargs)
-        if farm_id in self.relation:
-            self._remove_instance(farm_id)
+            instance_id = self._update_instance(farm_id, **kwargs)
         self.relation[farm_id] = [instance_id]
 
     def rem_instance(self, farm_id=None, instance_id=None):
@@ -62,8 +60,8 @@ class SingleInstanceController(object):
         logger.debug("SingleInstanceController._create_instance({farm_id})".format(farm_id=str(farm_id)))
         return str(uuid4())
 
-    def _update_instance(self, instance_id, **kwargs):
-        logger.debug("SingleInstanceController._update_instance({instance_id}, {kwargs})".format(
-            instance_id=str(instance_id), kwargs=str(kwargs)
+    def _update_instance(self, farm_id, **kwargs):
+        logger.debug("SingleInstanceController._update_instance({farm_id}, {kwargs})".format(
+            instance_id=str(farm_id), kwargs=str(kwargs)
         ))
-        pass
+        return self.relation[farm_id]

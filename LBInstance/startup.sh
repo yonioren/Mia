@@ -15,7 +15,8 @@ curl -H "Content-Type: text/plain" -H "Client-IP: ${my_ip}" -X POST \
 flag=1
 for i in {1..5}
 do
-    if [ 0 -eq $(ip addr show eth1 2> /dev/null; echo $?) ]
+    echo "`ip addr show eth1 2> /dev/null; echo $?`"
+    if [ "0" == "`ip addr show eth1 > /dev/null 2>&1 ; echo $?`" ]
     then
         flag=0
         break

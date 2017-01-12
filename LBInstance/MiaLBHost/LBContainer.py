@@ -14,9 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from docker import from_env as docker_from_env
-from os import symlink, system
+from logging import getLogger, basicConfig
+from os import popen, symlink, system
 
 from LBHostConfig import get_config
+
+logger = getLogger(__name__)
 
 
 class LBContainer(object):
@@ -28,6 +31,7 @@ class LBContainer(object):
         # set up netns, for future ues
         netns = self.dclient.containers.get(container_id=container_id).attrs['NetworkSettings']['SandboxKey']
         self.netns = netns.split('/')[-1]
+        system("mkdir -p /var/run/netns 2>/dev/null")
         symlink(netns, '/var/run/netns/{}'.format(self.netns))
 
     def add_interface(self, **kwargs):
@@ -39,12 +43,20 @@ class LBContainer(object):
         else:
             network_id = self.dclient.networks.get(configs['network']).id
         self.dclient.networks.get(network_id=network_id).connect(self.container_id)
-
+        logger.debug("connecting container {cid} to network {nid}".format(cid=self.container_id, nid=network_id))
+        logger.debug("now {cid} is connected to {nets}".format(
+            cid=self.container_id,
+            nets=str(self.dclient.containers.get(self.container_id).attrs['NetworkSettings']['Networks'].keys())
+        ))
         # set up ip address
         subnet_mask = self.dclient.networks.get(network_id).attrs['IPAM']['Config'][0]['Subnet'].split('/')[1]
         if 'ip' in kwargs:
             ip = "{}/{}".format(kwargs['ip'], subnet_mask)
             system("ip netns exec {netns} ip addr add {ip} dev eth1".format(netns=self.netns, ip=ip))
+            logger.debug("ip addresses for {cid}: {ips}".format(
+                cid=self.container_id,
+                ips=popen("ip netns exec {netns} ip addr show".format(netns=self.netns)).read()
+            ))
 
         if 'default-network' not in kwargs or kwargs['default-network'] == True:
             gateway = kwargs['gateway'] if 'gateway' in kwargs else configs['gateway']

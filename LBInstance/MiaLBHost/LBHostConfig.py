@@ -14,13 +14,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from configparser import ConfigParser
+from logging import getLogger, basicConfig
 from re import sub
+
+loggger = getLogger(__name__)
 
 
 def get_config(configfiles=[]):
     configfiles += ['/etc/Mia/mialb.conf', '~/.Mia/mialb.conf', '/software/Mia/LB/mialb.conf']
     cp = ConfigParser()
     cp.read(filenames=configfiles)
+
+    try:
+        logfile = cp.get(section='default', option='logfile')
+    except Exception:
+        logger.debug("couldn't get logfile name. falling back to mia default")
+        logfile = str(os.path.dirname(os.path.abspath(__file__))) + '/../tests/unit/MiaLogs.log'
+    try:
+        loglevel = cp.get(section='default', option='loglevel')
+    except Exception:
+        logger.debug("couldn't get log level. falling back to mia default")
+        loglevel = 'WARNNING'
+
+    basicConfig(filename=logfile,
+                format='[%(asctime)s] [%(levelname)s] %(module)s - %(funcName)s:   %(message)s',
+                level=loglevel,
+                datefmt='%m/%d/%Y %I:%M:%S %p')
 
     net_name = cp.get(section='services', option='docker_network') \
         if cp.has_option(section='services', option='docker_network') else 'services'
