@@ -47,6 +47,9 @@ class SingleInstanceController(object):
         else:
             raise TypeError(message="at least one of farm_id or instance_id must be given")
 
+    def extract_args(self, farm_id, args):
+        return args
+
     def _remove_instance(self, farm_id):
         logger.debug("SingleInstanceController._remove_instance({farm_id})".format(farm_id=str(farm_id)))
         try:

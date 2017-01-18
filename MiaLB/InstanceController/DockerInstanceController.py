@@ -51,6 +51,7 @@ class DockerInstanceController(SingleInstanceController):
         SingleInstanceController.__init__(self)
         self.client = docker.DockerClient(base_url='http://localhost:2376')
         self.mialb_url = mialb_url if mialb_url else None
+        self.service_relation = {}
 
     def set_instance(self, **kwargs):
         Thread(target=super(DockerInstanceController, self).set_instance, kwargs=kwargs).start()
@@ -58,6 +59,16 @@ class DockerInstanceController(SingleInstanceController):
     def rem_instance(self, farm_id=None, instance_id=None):
         Thread(target=super(DockerInstanceController, self).rem_instance,
                kwargs={'farm_id': farm_id, 'instance_id': instance_id}).start()
+
+    def extract_args(self, farm_id, args):
+        if self.mialb_url is None:
+            self.mialb_url = _guess_MiaLB_url()
+        if 'Docker-Service' in args:
+            self.service_relation[farm_id] = args.pop('Docker-Service')
+            os.spawnlp(os.P_NOWAIT, "mialb_update_farm.py",
+                       "--farm", str(farm_id),
+                       "--service", self.service_relation[farm_id])
+        return args
 
     def _remove_instance(self, farm_id):
         instance_id = super(DockerInstanceController, self)._remove_instance(farm_id=farm_id)

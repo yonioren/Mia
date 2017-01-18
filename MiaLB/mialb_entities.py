@@ -79,8 +79,9 @@ class Farm:
         else:
             return None
     
-    def add_member(self, farm_member):
-        member_id = self.generate_farm_member_id()
+    def add_member(self, farm_member, member_id=None):
+        if member_id is None
+            member_id = self.generate_farm_member_id()
         self.members[member_id] = farm_member if isinstance(farm_member, FarmMember) else FarmMember(**farm_member)
     
     def delete_member(self, member_id):
