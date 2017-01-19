@@ -13,8 +13,8 @@ EOF
 yum install -y httpd mod_wsgi docker-engine nginx
 
 # set up docker
-sed -i 's@^ExecStart=.*$@ExecStart=/usr/bin/dockerd -H unix:///var/run/docker.sock -H 0.0.0.0:2376@' \
-  //usr/lib/systemd/system/docker.service
+#sed -i 's@^ExecStart=\([a-z/\-]*\).*$@ExecStart=\1 -H unix:///var/run/docker.sock -H 0.0.0.0:2376@' \
+#  //usr/lib/systemd/system/docker.service
 systemctl daemon-reload
 systemctl enable docker.service ; systemctl start docker.service
 swarmIp=`ip -4 addr show | grep inet | \
@@ -37,7 +37,8 @@ restorecon -R /etc/nginx/conf.d
 semanage fcontext -a -t httpd_log_t "/var/log/Mia(/.*)?"
 semanage port -a -t http_port_t -p tcp 666
 mkdir -p /var/log/Mia
-chown apache:apache /var/log/Mia
+touch /var/log/Mia/mialb.log
+chown --recursive apache:apache /var/log/Mia
 restorecon -R /var/log/Mia/
 
 # set up application directory
@@ -55,6 +56,12 @@ setsebool -P httpd_can_network_connect 1
 # build docker image
 docker build -t nginx_for_mia:latest LBInstance
 docker save nginx_for_mia:latest -o /tmp/nginx_for_mia.tar
+
+# install mialb_updater
+cp MiaLBUpdater/mialb_update_farm.py /usr/local/bin/
+chmox ug+x /usr/local/bin/mialb_update_farm.py
+chown apache:apache
+semanage fcontext -a -t httpd_sys_script_exec_t "/usr/local/bin/mialb_update_farm.py"
 
 # set up docker hosts
 for host in `cat conf/hosts`

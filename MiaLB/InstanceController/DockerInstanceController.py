@@ -51,7 +51,7 @@ class DockerInstanceController(SingleInstanceController):
         SingleInstanceController.__init__(self)
         self.client = docker.DockerClient(base_url='http://localhost:2376')
         self.mialb_url = mialb_url if mialb_url else None
-        self.service_relation = {}
+        self.docker_relation = {}
 
     def set_instance(self, **kwargs):
         Thread(target=super(DockerInstanceController, self).set_instance, kwargs=kwargs).start()
@@ -63,11 +63,19 @@ class DockerInstanceController(SingleInstanceController):
     def extract_args(self, farm_id, args):
         if self.mialb_url is None:
             self.mialb_url = _guess_MiaLB_url()
+        if farm_id not in self.docker_relation:
+            self.docker_relation[farm_id] = {}
+        if 'Docker-Network' in args:
+            self.docker_relation[farm_id]['network'] = args.pop('Docker-Network')
         if 'Docker-Service' in args:
-            self.service_relation[farm_id] = args.pop('Docker-Service')
+            self.docker_relation[farm_id]['service'] = args.pop('Docker-Service')
+            self.docker_relation[farm_id]['network'] = self.client.services.get(
+                self.docker_relation[farm_id]['service']
+            ).attrs['Endpoint']['VirtualIPs'][0]['NetworkID']
             os.spawnlp(os.P_NOWAIT, "mialb_update_farm.py",
                        "--farm", str(farm_id),
-                       "--service", self.service_relation[farm_id])
+                       "--service", self.docker_relation[farm_id],
+                       "--mialb-url", self.mialb_url)
         return args
 
     def _remove_instance(self, farm_id):
@@ -82,7 +90,8 @@ class DockerInstanceController(SingleInstanceController):
         service_id = self.client.services.create(image='nginx_for_mia:latest',
                                                  env=['FARMID={}'.format(str(farm_id)),
                                                       'MIALBURI={}'.format(str(self.mialb_url))],
-                                                 name=str(farm_id))
+                                                 name=str(farm_id),
+                                                 networks=[self.docker_relation[str(farm_id)]['network']])
         if isinstance(service_id, list):
             return service_id[0]
         else:

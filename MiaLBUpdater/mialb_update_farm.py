@@ -13,20 +13,41 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import os
+
 from argparse import ArgumentParser
+from configparser import ConfigParser
 from docker import DockerClient
 from json import dumps
+from re import sub
 from requests import post, delete
 
 main_parser = ArgumentParser(description="utility for updating members of MiaLB")
 
 main_parser.add_argument("--farm", type=str, required=True, help="farm id")
 main_parser.add_argument("--service", type=str, required=True, help="name/id of the docker service we're LBing")
+main_parser.add_argument("--mialb-url", type=str, required=False, help="name/id of the docker service we're LBing")
 
-mialb_url = ""
+kwargs = main_parser.parse_args().__dict__
 last_members = []
 client = DockerClient(base_url='http://localhost:2376')
-kwargs = main_parser.parse_args().__dict__
+
+conf_file_order = ['/etc/Mia/mialb.conf', '~/.Mia/mialb.conf', '/software/Mia/LB/mialb.conf']
+cp = ConfigParser()
+cp.read(filenames=conf_file_order)
+
+if 'mialb-url' in kwargs:
+    mialb_url = kwargs['mialb-url']
+else:
+    try:
+        host = cp.get(section='server', option='host')
+        port = cp.get(section='server', option='port')
+    except Exception:
+        host = 'localhost'
+        port = 6669
+    local_addr = "{host}:{port}".format(host=host, port=port)
+    print("http://{}".format(local_addr))
+    mialb_url = "http://{}".format(local_addr)
 
 while True:
     service = client.services.get(kwargs['farm'])

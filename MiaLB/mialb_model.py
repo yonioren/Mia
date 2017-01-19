@@ -54,7 +54,7 @@ class MiaLBModel(object):
 
     def create_farm(self, args):
         farm_id = self.generate_farm_id()
-        args = self.instance_controller.extract_args(farm_id, args)
+        args = self.instance_controller.extract_args(str(farm_id), args)
         new_farm = Farm(str(farm_id), args)
         self.farms[farm_id] = new_farm
         self.create_indexes(farm_id, new_farm)
