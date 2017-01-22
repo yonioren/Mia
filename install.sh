@@ -47,6 +47,7 @@ mkdir -p /software/Mia/LB
 ( cd MiaLB ; tar -cf - . ) | ( cd /software/Mia/LB ; tar -xf - . )
 cp conf/apache-mia-lb.conf /etc/httpd/conf.d/mialb.conf
 cp conf/mialb.conf /software/Mia/LB/
+cp conf/mialb.sudoers /etc/sudoers.d/mialb
 restorecon -R /software/Mia/
 chown apache:apache /software/Mia/LB
 

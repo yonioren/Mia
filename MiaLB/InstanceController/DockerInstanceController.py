@@ -21,9 +21,10 @@ from logging import getLogger
 from threading import Thread
 from re import sub
 from requests import get
+from time import sleep
 
 from SingleInstanceController import SingleInstanceController
-from .mialb_configs import *
+from mialb_configs import *
 
 logger = getLogger(__name__)
 
@@ -72,13 +73,15 @@ class DockerInstanceController(SingleInstanceController):
             self.docker_relation[farm_id]['network'] = self.client.services.get(
                 self.docker_relation[farm_id]['service']
             ).attrs['Endpoint']['VirtualIPs'][0]['NetworkID']
-            logger.debug("/usr/local/bin/mialb_update_farm.py --farm {farm} --service {service} --mialb-uri {url}".format(
+            logger.debug("/usr/bin/sudo /usr/local/bin/mialb_update_farm.py"
+                         " --farm {farm} --service {service} --mialb-uri {url}".format(
                 farm=str(farm_id),
                 service=self.docker_relation[farm_id]['service'],
                 url=self.mialb_url
             ))
             # theoretically it won't hurt us because the updater acts as a daemon (double fork)
-            os.system("/usr/local/bin/mialb_update_farm.py --farm {farm} --service {service} --mialb-uri {url}".format(
+            os.system("/usr/bin/sudo /usr/local/bin/mialb_update_farm.py"
+                      " --farm {farm} --service {service} --mialb-uri {url}".format(
                 farm=str(farm_id),
                 service=self.docker_relation[farm_id]['service'],
                 url=self.mialb_url
