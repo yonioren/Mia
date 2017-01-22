@@ -15,6 +15,9 @@ curl -H "Content-Type: text/plain" -H "Client-IP: ${my_ip}" -X POST \
 flag=1
 for i in {1..5}
 do
+    echo "DEBUG ************"
+    ip addr show
+    echo "************ DEBUG"
     echo "`ip addr show eth1 2> /dev/null; echo $?`"
     if [ "0" == "`ip addr show eth1 > /dev/null 2>&1 ; echo $?`" ]
     then
@@ -26,6 +29,9 @@ do
 done
 if [ $flag -eq 0 ]
 then
+    echo "DEBUG ************"
+    cat /etc/nginx/conf.d/${FARMID}.conf
+    echo "************ DEBUG"
     nginx -g "daemon off;"
     while [ $flag -eq 0 ]
     do

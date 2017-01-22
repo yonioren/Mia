@@ -17,7 +17,7 @@ from configparser import ConfigParser
 from logging import getLogger, basicConfig
 from re import sub
 
-loggger = getLogger(__name__)
+logger = getLogger(__name__)
 
 
 def get_config(configfiles=[]):
@@ -26,7 +26,7 @@ def get_config(configfiles=[]):
     cp.read(filenames=configfiles)
 
     try:
-        logfile = cp.get(section='default', option='logfile')
+        logfile = cp.get(section='lb-host', option='logfile')
     except Exception:
         logger.debug("couldn't get logfile name. falling back to mia default")
         logfile = str(os.path.dirname(os.path.abspath(__file__))) + '/../tests/unit/MiaLogs.log'

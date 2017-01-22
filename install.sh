@@ -59,9 +59,10 @@ docker save nginx_for_mia:latest -o /tmp/nginx_for_mia.tar
 
 # install mialb_updater
 cp MiaLBUpdater/mialb_update_farm.py /usr/local/bin/
-chmox ug+x /usr/local/bin/mialb_update_farm.py
-chown apache:apache
+chmod ug+x /usr/local/bin/mialb_update_farm.py
+chown apache:apache /usr/local/bin/mialb_update_farm.py
 semanage fcontext -a -t httpd_sys_script_exec_t "/usr/local/bin/mialb_update_farm.py"
+restorecon /usr/local/bin/mialb_update_farm.py
 
 # set up docker hosts
 for host in `cat conf/hosts`

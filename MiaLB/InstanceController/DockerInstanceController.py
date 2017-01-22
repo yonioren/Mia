@@ -23,7 +23,7 @@ from re import sub
 from requests import get
 
 from SingleInstanceController import SingleInstanceController
-from MiaLB.mialb_configs import *
+from .mialb_configs import *
 
 logger = getLogger(__name__)
 
@@ -72,10 +72,18 @@ class DockerInstanceController(SingleInstanceController):
             self.docker_relation[farm_id]['network'] = self.client.services.get(
                 self.docker_relation[farm_id]['service']
             ).attrs['Endpoint']['VirtualIPs'][0]['NetworkID']
-            os.spawnlp(os.P_NOWAIT, "mialb_update_farm.py",
-                       "--farm", str(farm_id),
-                       "--service", self.docker_relation[farm_id],
-                       "--mialb-url", self.mialb_url)
+            logger.debug("/usr/local/bin/mialb_update_farm.py --farm {farm} --service {service} --mialb-uri {url}".format(
+                farm=str(farm_id),
+                service=self.docker_relation[farm_id]['service'],
+                url=self.mialb_url
+            ))
+            # theoretically it won't hurt us because the updater acts as a daemon (double fork)
+            os.system("/usr/local/bin/mialb_update_farm.py --farm {farm} --service {service} --mialb-uri {url}".format(
+                farm=str(farm_id),
+                service=self.docker_relation[farm_id]['service'],
+                url=self.mialb_url
+            ))
+            sleep(0.1)
         return args
 
     def _remove_instance(self, farm_id):
@@ -115,7 +123,15 @@ class DockerInstanceController(SingleInstanceController):
                 logger.info("container id: {}".format(container_id))
                 logger.info("node name: {}".format(node_name))
         host_address = node_name
-        logger.debug("ssh root@{host} 'python2.7 ....'".format(host=host_address))
+        logger.debug("ssh root@{host} 'python2.7 /usr/bin/docker_networking.py connect"
+                     " --container {contiainer_id} --ip {ip}'".format(host=host_address,
+                                                                      contiainer_id=container_id,
+                                                                      ip=external_ip))
+        logger.debug("containers {container_id} networks: {settings}".format(
+            container_id=container_id,
+            settings=str(self.client.containers.get(container_id=container_id).
+                         attrs['NetworkSettings']['Networks'].keys())
+        ))
         os.system("ssh root@{host} 'python2.7 /usr/bin/docker_networking.py connect"
                   " --container {contiainer_id} --ip {ip}'".format(host=host_address,
                                                                    contiainer_id=container_id,

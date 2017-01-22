@@ -19,8 +19,8 @@ from flask import request
 from flask.helpers import make_response
 from logging import getLogger
 
-from MiaLB.mialb_entities import logger
-from MiaLB.mialb_model import MiaLBModel
+from .mialb_entities import logger
+from .mialb_model import MiaLBModel
 
 logger = getLogger(__name__)
 

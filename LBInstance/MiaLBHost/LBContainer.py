@@ -31,8 +31,11 @@ class LBContainer(object):
         # set up netns, for future ues
         netns = self.dclient.containers.get(container_id=container_id).attrs['NetworkSettings']['SandboxKey']
         self.netns = netns.split('/')[-1]
-        system("mkdir -p /var/run/netns 2>/dev/null")
-        symlink(netns, '/var/run/netns/{}'.format(self.netns))
+        try:
+            system("mkdir -p /var/run/netns 2>/dev/null")
+            symlink(netns, '/var/run/netns/{}'.format(self.netns))
+        except OSError:
+            logger.debug("got OS Error. file probable exists")
 
     def add_interface(self, **kwargs):
         configs = get_config()

@@ -16,9 +16,9 @@
 import json
 import uuid
 
-from MiaLB.InstanceController.DockerInstanceController import DockerInstanceController
-from MiaLB.mialb_controller import MiaLBController
-from MiaLB.mialb_entities import Farm
+from .InstanceController.DockerInstanceController import DockerInstanceController
+from .mialb_controller import MiaLBController
+from .mialb_entities import Farm
 
 
 class MiaLBModel(object):
