@@ -37,6 +37,7 @@ class MiaLBModel(object):
             self.create_indexes(farm_id, farm)
     
     def get_farms(self):
+        self.farms = self.controller.load_farms()
         return self.farms
     
     def get_farm(self, farm_id):

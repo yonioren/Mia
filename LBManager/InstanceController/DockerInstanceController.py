@@ -16,35 +16,15 @@
 import os
 import docker
 
-from ipaddress import ip_address, ip_network
 from logging import getLogger
 from threading import Thread
-from re import sub
 from requests import get
 from time import sleep
 
 from SingleInstanceController import SingleInstanceController
-from mialb_configs import *
+from LBManager.utils.mialb_configs import guess_MiaLB_url
 
 logger = getLogger(__name__)
-
-
-def _guess_MiaLB_url():
-    print("my pid is {}".format(str(os.getpid())))
-    try:
-        protocol, inq, outq, local_addr, foreign_addr, state, process = \
-            os.popen("netstat -4 -tlnp | grep -e '\s{}/'".format(str(os.getpid()))).readlines()[0].split()
-    except IndexError:
-        protocol, inq, outq, local_addr, foreign_addr, state, process = \
-            os.popen("netstat -4 -tlnp | grep -e ':{}\s'".format(port)).readlines()[0].split()
-    # guess my public ip
-    temp = os.popen("ip route show | grep default").read().split()
-    public_device = temp[temp.index('dev') + 1]
-    temp = os.popen("ip -4 addr show {} | grep inet".format(public_device)).read().split()
-    public_address = temp[temp.index('inet') + 1].split('/')[0]
-    local_addr = sub('(0.0.0.0|127.0.0.1)', public_address, local_addr)
-    print("http://{}".format(local_addr))
-    return "http://{}".format(local_addr)
 
 
 class DockerInstanceController(SingleInstanceController):
@@ -63,7 +43,7 @@ class DockerInstanceController(SingleInstanceController):
 
     def extract_args(self, farm_id, args):
         if self.mialb_url is None:
-            self.mialb_url = _guess_MiaLB_url()
+            self.mialb_url = guess_MiaLB_url()
         if farm_id not in self.docker_relation:
             self.docker_relation[farm_id] = {}
         if 'Docker-Network' in args:
@@ -73,20 +53,6 @@ class DockerInstanceController(SingleInstanceController):
             self.docker_relation[farm_id]['network'] = self.client.services.get(
                 self.docker_relation[farm_id]['service']
             ).attrs['Endpoint']['VirtualIPs'][0]['NetworkID']
-            logger.debug("/usr/bin/sudo /usr/local/bin/mialb_update_farm.py"
-                         " --farm {farm} --service {service} --mialb-uri {url}".format(
-                farm=str(farm_id),
-                service=self.docker_relation[farm_id]['service'],
-                url=self.mialb_url
-            ))
-            # theoretically it won't hurt us because the updater acts as a daemon (double fork)
-            os.system("/usr/bin/sudo /usr/local/bin/mialb_update_farm.py"
-                      " --farm {farm} --service {service} --mialb-uri {url}".format(
-                farm=str(farm_id),
-                service=self.docker_relation[farm_id]['service'],
-                url=self.mialb_url
-            ))
-            sleep(0.1)
         return args
 
     def _remove_instance(self, farm_id):
@@ -97,7 +63,7 @@ class DockerInstanceController(SingleInstanceController):
 
     def _create_instance(self, farm_id):
         if self.mialb_url is None:
-            self.mialb_url = _guess_MiaLB_url()
+            self.mialb_url = guess_MiaLB_url()
         service_id = self.client.services.create(image='nginx_for_mia:latest',
                                                  env=['FARMID={}'.format(str(farm_id)),
                                                       'MIALBURI={}'.format(str(self.mialb_url))],
@@ -110,7 +76,7 @@ class DockerInstanceController(SingleInstanceController):
 
     def _update_instance(self, farm_id, **kwargs):
         if self.mialb_url is None:
-            self.mialb_url = _guess_MiaLB_url()
+            self.mialb_url = guess_MiaLB_url()
 
         # we'll get here when an instance reports it's up and waiting for eth1
         external_ip = get(

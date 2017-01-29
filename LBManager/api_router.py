@@ -15,12 +15,13 @@
 
 import json
 import logging
+from sys import argv
 
 from flask import Flask, make_response
-from mialb_configs import *
+
+from MiaLB.utils.mialb_configs import *
 from mialb_model import MiaLBModel
 from mialb_view import MiaLBView
-from sys import argv
 
 
 class Mia(Flask):

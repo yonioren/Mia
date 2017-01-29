@@ -42,9 +42,9 @@ chown --recursive apache:apache /var/log/Mia
 restorecon -R /var/log/Mia/
 
 # set up application directory
-semanage fcontext -a -t httpd_sys_content_t "/software/Mia/LB(/.*)?"
+semanage fcontext -a -t httpd_sys_content_t "/software/Mia/LBManager(/.*)?"
 mkdir -p /software/Mia/LB
-( cd MiaLB ; tar -cf - . ) | ( cd /software/Mia/LB ; tar -xf - . )
+( cd MiaLB ; tar -cf - . ) | ( cd /software/Mia/LBManager ; tar -xf - . )
 cp conf/apache-mia-lb.conf /etc/httpd/conf.d/mialb.conf
 cp conf/mialb.conf /software/Mia/LB/
 cp conf/mialb.sudoers /etc/sudoers.d/mialb
