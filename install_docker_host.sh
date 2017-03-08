@@ -18,7 +18,7 @@ do
 done
 
 # install docker
-cat > /etc/yum.repos.d/docker.repo <<-'EOF'
+ls /etc/yum.repos.d/docker* || cat > /etc/yum.repos.d/docker.repo <<-'EOF'
 [dockerrepo]
 name=Docker Repository
 baseurl=https://yum.dockerproject.org/repo/main/fedora/$releasever/
@@ -27,7 +27,7 @@ gpgcheck=1
 gpgkey=https://yum.dockerproject.org/gpg
 EOF
 
-yum install -y docker-engine
+rpm -qa | grep docker || yum install -y docker-engine
 sed -i 's@^ExecStart=.*$@ExecStart=/usr/bin/dockerd -H unix:///var/run/docker.sock -H 0.0.0.0:2376@' \
   //usr/lib/systemd/system/docker.service
 systemctl daemon-reload

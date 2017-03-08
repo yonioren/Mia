@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # set up repository
-cat > /etc/yum.repos.d/docker.repo <<-'EOF'
+ls /etc/yum.repos.d/docker* || cat > /etc/yum.repos.d/docker.repo <<-'EOF'
 [dockerrepo]
 name=Docker Repository
 baseurl=https://yum.dockerproject.org/repo/main/fedora/$releasever/
@@ -10,7 +10,8 @@ gpgcheck=1
 gpgkey=https://yum.dockerproject.org/gpg
 EOF
 
-yum install -y httpd mod_wsgi docker-engine nginx
+yum install -y httpd mod_wsgi nginx
+rpm -qa | grep -q docker || yum install -y docker-engine
 
 # set up docker
 #sed -i 's@^ExecStart=\([a-z/\-]*\).*$@ExecStart=\1 -H unix:///var/run/docker.sock -H 0.0.0.0:2376@' \
@@ -44,7 +45,7 @@ restorecon -R /var/log/Mia/
 # set up application directory
 semanage fcontext -a -t httpd_sys_content_t "/software/Mia/LBManager(/.*)?"
 mkdir -p /software/Mia/LB
-( cd MiaLB ; tar -cf - . ) | ( cd /software/Mia/LBManager ; tar -xf - . )
+( cd LBManager ; tar -cf - . ) | ( cd /software/Mia/LBManager ; tar -xf - . )
 cp conf/apache-mia-lb.conf /etc/httpd/conf.d/mialb.conf
 cp conf/mialb.conf /software/Mia/LB/
 cp conf/mialb.sudoers /etc/sudoers.d/mialb
@@ -59,7 +60,7 @@ docker build -t nginx_for_mia:latest LBInstance
 docker save nginx_for_mia:latest -o /tmp/nginx_for_mia.tar
 
 # install mialb_updater
-cp MiaLBUpdater/mialb_update_farm.py /usr/local/bin/
+cp LBManager/MiaLBUpdater/mialb_update_farm.py /usr/local/bin/
 chmod ug+x /usr/local/bin/mialb_update_farm.py
 chown apache:apache /usr/local/bin/mialb_update_farm.py
 semanage fcontext -a -t httpd_sys_script_exec_t "/usr/local/bin/mialb_update_farm.py"
