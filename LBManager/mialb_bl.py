@@ -17,15 +17,15 @@ import json
 import uuid
 
 from .InstanceController.DockerInstanceController import DockerInstanceController
-from .mialb_controller import MiaLBController
+from .mialb_dal import MiaLBDAL
 from .mialb_entities import Farm
 
 
-class MiaLBModel(object):
+class MiaLBBL(object):
 
     def __init__(self, controller=None, instance_controller=None):
         """ Constructor """
-        self.controller = controller if controller else MiaLBController()
+        self.controller = controller if controller else MiaLBDAL()
         self.instance_controller = instance_controller if instance_controller else DockerInstanceController()
         self.farms = {}
         self.indexes = {}
@@ -132,7 +132,7 @@ class MiaLBModel(object):
     
 # unit tests
 if __name__ == '__main__':
-    model = MiaLBModel()
+    model = MiaLBBL()
     print(str(model))
     for farm in model.get_farms().values():
         print(str(farm))

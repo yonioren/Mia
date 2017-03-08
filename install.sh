@@ -44,13 +44,13 @@ restorecon -R /var/log/Mia/
 
 # set up application directory
 semanage fcontext -a -t httpd_sys_content_t "/software/Mia/LBManager(/.*)?"
-mkdir -p /software/Mia/LB
+mkdir -p /software/Mia/LBManager
 ( cd LBManager ; tar -cf - . ) | ( cd /software/Mia/LBManager ; tar -xf - . )
 cp conf/apache-mia-lb.conf /etc/httpd/conf.d/mialb.conf
-cp conf/mialb.conf /software/Mia/LB/
+cp conf/mialb.conf /software/Mia/LBManager/
 cp conf/mialb.sudoers /etc/sudoers.d/mialb
 restorecon -R /software/Mia/
-chown apache:apache /software/Mia/LB
+chown apache:apache /software/Mia/LBManager
 
 # other SELinux related permissions
 setsebool -P httpd_can_network_connect 1

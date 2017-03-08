@@ -20,7 +20,7 @@ from re import sub
 
 logger = getLogger(__name__)
 
-conf_file_order = ['/etc/Mia/mialb.conf', '~/.Mia/mialb.conf', '/software/Mia/LB/mialb.conf']
+conf_file_order = ['/etc/Mia/mialb.conf', '~/.Mia/mialb.conf', '/software/Mia/LBManager/mialb.conf']
 cp = ConfigParser()
 cp.read(filenames=conf_file_order)
 

@@ -15,7 +15,7 @@ logger = getLogger(__name__)
 DEFAULT_CONF_DIR = "/etc/nginx/conf.d/"
 
 
-class MiaLBController(object):
+class MiaLBDAL(object):
     def __init__(self):
         """ Constructor """
 
@@ -188,7 +188,7 @@ class MiaLBController(object):
 
 # unit tests
 if __name__ == '__main__':
-    controller = MiaLBController()
+    controller = MiaLBDAL()
     farms = controller.load_farms()
     print(str(farms))
     for farm in farms.values():

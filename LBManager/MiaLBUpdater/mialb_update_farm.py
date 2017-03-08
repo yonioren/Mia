@@ -85,7 +85,7 @@ last_members = []
 client = DockerClient(base_url='http://localhost:2376')
 logger.debug("configured docker client")
 
-conf_file_order = ['/etc/Mia/mialb.conf', '~/.Mia/mialb.conf', '/software/Mia/LB/mialb.conf']
+conf_file_order = ['/etc/Mia/mialb.conf', '~/.Mia/mialb.conf', '/software/Mia/LBManager/mialb.conf']
 cp = ConfigParser()
 cp.read(filenames=conf_file_order)
 logger.debug("read configureations")
