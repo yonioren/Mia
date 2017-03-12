@@ -1,2 +1,1 @@
-Defaults    !requiretty
 apache    ALL=(ALL)    NOPASSWD: /usr/local/bin/mialb_update_farm.py

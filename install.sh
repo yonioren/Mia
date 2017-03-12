@@ -47,23 +47,29 @@ mkdir -p /software/Mia/LB
 ( cd MiaLB ; tar -cf - . ) | ( cd /software/Mia/LB ; tar -xf - . )
 cp conf/apache-mia-lb.conf /etc/httpd/conf.d/mialb.conf
 cp conf/mialb.conf /software/Mia/LB/
-cp conf/mialb.sudoers /etc/sudoers.d/mialb
 restorecon -R /software/Mia/
 chown apache:apache /software/Mia/LB
 
-# other SELinux related permissions
+# other SELinux and permissions
 setsebool -P httpd_can_network_connect 1
+cp conf/mialb.sudoers /etc/sudoers.d/mialb
+if grep -q requiretty /etc/sudoers
+then
+    sed -i 's/[^!]requiretty/!requiretty/' /etc/sudoers
+else
+    echo "Defaults    !requiretty" >> /etc/sudoers
+fi
 
 # build docker image
 docker build -t nginx_for_mia:latest LBInstance
 docker save nginx_for_mia:latest -o /tmp/nginx_for_mia.tar
 
-# install mialb_updater
-cp MiaLBUpdater/mialb_update_farm.py /usr/local/bin/
-chmod ug+x /usr/local/bin/mialb_update_farm.py
-chown apache:apache /usr/local/bin/mialb_update_farm.py
-semanage fcontext -a -t httpd_sys_script_exec_t "/usr/local/bin/mialb_update_farm.py"
-restorecon /usr/local/bin/mialb_update_farm.py
+## install mialb_updater
+#cp MiaLBUpdater/mialb_update_farm.py /usr/local/bin/
+#chmod ug+x /usr/local/bin/mialb_update_farm.py
+#chown apache:apache /usr/local/bin/mialb_update_farm.py
+#semanage fcontext -a -t httpd_sys_script_exec_t "/usr/local/bin/mialb_update_farm.py"
+#restorecon /usr/local/bin/mialb_update_farm.py
 
 # set up docker hosts
 for host in `cat conf/hosts`
