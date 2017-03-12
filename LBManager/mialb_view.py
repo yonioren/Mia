@@ -20,7 +20,7 @@ from flask.helpers import make_response
 from logging import getLogger
 
 from .mialb_entities import logger
-from .mialb_model import MiaLBModel
+from .mialb_bl import MiaLBBL
 
 logger = getLogger(__name__)
 
@@ -28,7 +28,7 @@ logger = getLogger(__name__)
 class MiaLBView:
     def __init__(self, model=None):
         if model is None:
-            self.model = MiaLBModel()
+            self.model = MiaLBBL()
         else:
             self.model = model
 

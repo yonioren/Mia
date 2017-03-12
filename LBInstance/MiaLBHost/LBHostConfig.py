@@ -21,7 +21,7 @@ logger = getLogger(__name__)
 
 
 def get_config(configfiles=[]):
-    configfiles += ['/etc/Mia/mialb.conf', '~/.Mia/mialb.conf', '/software/Mia/LB/mialb.conf']
+    configfiles += ['/etc/Mia/mialb.conf', '~/.Mia/mialb.conf', '/software/Mia/LBManager/mialb.conf']
     cp = ConfigParser()
     cp.read(filenames=configfiles)
 

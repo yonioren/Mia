@@ -125,8 +125,9 @@ class FarmMember:
                 self.url = kwargs['url']
             else:
                 attempt_url = str(kwargs.pop('ip', ''))
-                attempt_url += ':'
-                attempt_url += str(kwargs.pop('port', ''))
+                if 'port' in kwargs:
+                    attempt_url += ':'
+                    attempt_url += str(kwargs.pop('port'))
                 if self.is_url_valid(attempt_url):
                     self.url = attempt_url
                 else:

@@ -15,18 +15,19 @@
 
 import json
 import logging
+from sys import argv
 
 from flask import Flask, make_response
-from mialb_configs import *
-from mialb_model import MiaLBModel
+
+from MiaLB.utils.mialb_configs import *
+from mialb_bl import MiaLBBL
 from mialb_view import MiaLBView
-from sys import argv
 
 
 class Mia(Flask):
     def __init__(self, name):
         Flask.__init__(self, name)
-        self.model = MiaLBModel()
+        self.model = MiaLBBL()
         self.view = MiaLBView(self.model)
         self.route_view()
         self._config_logger()
