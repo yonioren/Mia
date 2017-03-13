@@ -36,7 +36,7 @@ class MiaLBDAL(object):
         try:
             conf_file = open(filename, 'r')
         except IOError:
-            logger.info("In MiaLB_Controller.load_farm(farm_id: %s ): file not found" % farm_id)
+            logger.info("In MiaLB_Controller.load_farm(farm_id: {} ): file not found".format(farm_id))
             return False
 
         file_content = str(conf_file.read()).split()
@@ -55,7 +55,8 @@ class MiaLBDAL(object):
         destination.write(unicode(file_content))
         destination.close()
         # infrom nginx about the changes
-        # system("nginx -s reload")
+        if farm.get_members():
+            system("nginx -s reload")
     
     def delete_farm(self, farm_id):
         filename = str(self.conf_dir) + str(farm_id) + ".conf"
@@ -64,7 +65,7 @@ class MiaLBDAL(object):
         except OSError as e:
             # file not found error
             if e.errno == errno.ENOENT:
-                logger.info("In MiaLB_Controller.delete_farm(farm_id: %s ): file not found" % farm_id)
+                logger.info("In MiaLB_Controller.delete_farm(farm_id: {} ): file not found".format(farm_id))
             else:
                 raise e
         # infrom nginx about the changes
@@ -107,17 +108,17 @@ class MiaLBDAL(object):
                 if str(content.pop()) == '{':
                     self.parsing_upstream(content, farm_args, members_args)
                 else:
-                    logger.debug("after upstream expected {, instead got %s " % head)
-                    raise "In MiaLB_Controller.parsing_begin: after upstream expected {, instead got %s " % head
+                    logger.debug("after upstream expected {, instead got %s ".format(head))
+                    raise "In MiaLB_Controller.parsing_begin: after upstream expected {, instead got {} ".format(head)
             elif head == 'server':
                 if str(content.pop()) == '{':
                     self.parsing_server(content, farm_args, members_args)
                 else:
                     logger.debug("after server expected {, instead got %s " % head)
-                    raise "In MiaLB_Controller.parsing_begin: after server expected {, instead got %s " % head
+                    raise "In MiaLB_Controller.parsing_begin: after server expected {, instead got {}".format(head)
             else:
-                logger.debug("unknown word %s " % head)
-                raise "In MiaLB_Controller.parsing_begin: unknown word %s " % head
+                logger.debug("unknown word {} ".format(head))
+                raise "In MiaLB_Controller.parsing_begin: unknown word {} ".format(head)
 
     def parsing_upstream(self, content, farm_args, members_args):
         while content:
@@ -129,8 +130,8 @@ class MiaLBDAL(object):
             elif head == "}":
                 return True
             else:
-                logger.debug("unknown word %s " % head)
-                raise("In MiaLB_Controller.parsing_upstream: unknown word %s " % head)
+                logger.debug("unknown word {} ".format(head))
+                raise("In MiaLB_Controller.parsing_upstream: unknown word {} ".format(head))
     
     @staticmethod
     def parsing_member(content, farm_args, members_args):
@@ -143,8 +144,8 @@ class MiaLBDAL(object):
             if weight.startswith('weight='):
                 members_args[head] = weight.split('=')[1]
             else:
-                logger.debug("unknown word %s , expected ; or weight" % weight)
-                raise("In MiaLB_Controller.parsing_member: unknown word %s , expected ; or weight" % weight)
+                logger.debug("unknown word {} , expected ; or weight".format(weight))
+                raise("In MiaLB_Controller.parsing_member: unknown word {} , expected ; or weight".format(weight))
     
     def parsing_server(self, content, farm_args, members_args):
         while content:
@@ -164,13 +165,13 @@ class MiaLBDAL(object):
                 if str(content.pop()) == '{':
                     self.parsing_location(content, farm_args, members_args)
                 else:
-                    logger.debug("after location expected {, instead got %s " % head)
-                    raise "In MiaLB_Controller.parsing_server: after location expected {, instead got %s " % head
+                    logger.debug("after location expected {, instead got {} ".format(head))
+                    raise "In MiaLB_Controller.parsing_server: after location expected {, instead got {} ".format(head)
             elif head == '}':
                 return True
             else:
-                logger.debug("unknown word %s " % head)
-                raise "In MiaLB_Controller.parsing_server: unknown word %s " % head
+                logger.debug("unknown word {} ".format(head))
+                raise "In MiaLB_Controller.parsing_server: unknown word {} ".format(head)
 
     @staticmethod
     def parsing_location(content, farm_args, members_args):
@@ -183,8 +184,8 @@ class MiaLBDAL(object):
             elif head == '}':
                 return True
             else:
-                logger.debug("expected proxy_pass, instead got %s " % head)
-                raise "In MiaLB_Controller.parsing_location: expected proxy_pass, instead got %s " % head
+                logger.debug("expected proxy_pass, instead got {} ".format(head))
+                raise "In MiaLB_Controller.parsing_location: expected proxy_pass, instead got {} ".format(head)
 
 # unit tests
 if __name__ == '__main__':

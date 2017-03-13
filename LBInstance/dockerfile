@@ -1,9 +1,8 @@
 FROM nginx
 RUN apt-get update
-RUN apt-get install -y curl
-ENV MIALBURI http://mialb/conf.d/
+RUN apt-get install -y python-flask
 COPY startup.sh /startup.sh
-COPY update_nginx.sh /update_nginx.sh
-RUN chmod +x /startup.sh /update_nginx.sh
-# COPY networkconf.py /usr/bin/networkconf.py
-CMD /startup.sh
+COPY MiaLB /MiaLB
+RUN chmod +x /startup.sh
+RUN rm -f /etc/nginx/conf.d/default.conf
+CMD /bin/bash /startup.sh

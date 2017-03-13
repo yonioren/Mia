@@ -19,7 +19,7 @@ from sys import argv
 
 from flask import Flask, make_response
 
-from MiaLB.utils.mialb_configs import *
+from mialb_configs import *
 from mialb_bl import MiaLBBL
 from mialb_view import MiaLBView
 

@@ -13,36 +13,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-from configparser import ConfigParser
+from os import environ as ENV
 from logging import getLogger
 from re import sub
 
 logger = getLogger(__name__)
 
-conf_file_order = ['/etc/Mia/mialb.conf', '~/.Mia/mialb.conf', '/software/Mia/LBManager/mialb.conf']
-cp = ConfigParser()
-cp.read(filenames=conf_file_order)
+# unlike traditional configs, in a container I expect everything to be ENV variable
 
-try:
-    logfile = cp.get(section='default', option='logfile')
-except Exception:
-    logger.debug("couldn't get logfile name. falling back to mia default")
-    logfile = str(os.path.dirname(os.path.abspath(__file__))) + '/../tests/unit/MiaLogs.log'
-try:
-    loglevel = cp.get(section='default', option='loglevel')
-except Exception:
-    logger.debug("couldn't get log level. falling back to mia default")
-    loglevel = 'WARNNING'
-try:
-    host = cp.get(section='server', option='host')
-    port = cp.get(section='server', option='port')
-except Exception:
-    logger.debug("couldn't get bind address. falling back to mia default")
-    host = 'localhost'
-    port = 6669
+ENV['MIA_LOG_FILE'] = ENV.get('MIA_LOG_FILE', '/bin/stdout')
+ENV['MIA_LOG_LEVEL'] = ENV.get('MIA_LOG_LEVEL', 'WARNING')
+ENV['MIA_HOST'] = ENV.get('MIA_HOST', '0.0.0.0')
+ENV['MIA_PORT'] = ENV.get('MIA_PORT', '666')
+logfile = ENV['MIA_LOG_FILE']
+loglevel = ENV['MIA_LOG_LEVEL']
+host = ENV['MIA_HOST']
+port = ENV['MIA_PORT']
 
-
+"""
 def guess_MiaLB_url():
     print("my pid is {}".format(str(os.getpid())))
     try:
@@ -59,3 +47,4 @@ def guess_MiaLB_url():
     local_addr = sub('(0.0.0.0|127.0.0.1)', public_address, local_addr)
     print("http://{}".format(local_addr))
     return "http://{}".format(local_addr)
+"""

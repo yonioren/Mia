@@ -13,16 +13,17 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from docker import DockerClient
 from itertools import chain
 from json import dumps
 from logging import getLogger
 from re import sub
-from requests import get, post, delete
-from time import sleep
 from threading import Thread
+from time import sleep
 
-from LBManager.utils.mialb_configs import guess_MiaLB_url
+from docker import DockerClient
+from requests import get, post, delete
+
+from LBInstance.MiaLB.mialb_configs import guess_MiaLB_url
 from LBManager.utils.mialb_useful import get_ip
 
 logger = getLogger(__name__)

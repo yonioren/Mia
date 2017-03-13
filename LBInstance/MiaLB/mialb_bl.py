@@ -16,17 +16,15 @@
 import json
 import uuid
 
-from .InstanceController.DockerInstanceController import DockerInstanceController
-from .mialb_dal import MiaLBDAL
-from .mialb_entities import Farm
+from mialb_dal import MiaLBDAL
+from mialb_entities import Farm
 
 
 class MiaLBBL(object):
 
-    def __init__(self, controller=None, instance_controller=None):
+    def __init__(self, controller=None):
         """ Constructor """
         self.controller = controller if controller else MiaLBDAL()
-        self.instance_controller = instance_controller if instance_controller else DockerInstanceController()
         self.farms = {}
         self.indexes = {}
         self.load_farms()
@@ -55,12 +53,10 @@ class MiaLBBL(object):
 
     def create_farm(self, args):
         farm_id = self.generate_farm_id()
-        args = self.instance_controller.extract_args(str(farm_id), args)
         new_farm = Farm(str(farm_id), args)
         self.farms[farm_id] = new_farm
         self.create_indexes(farm_id, new_farm)
         self.controller.commit_farm(new_farm)
-        self.instance_controller.set_instance(farm_id=farm_id)
         return json.dumps({"farm": json.dumps(new_farm.__dict__)}), 201
         
     def update_farm(self, farm_id, args):
@@ -68,7 +64,6 @@ class MiaLBBL(object):
         farm.update_farm(args)
         self.create_indexes(farm_id, farm)
         self.controller.commit_farm(farm)
-        self.instance_controller._update_instance(farm_id=farm_id)
         return json.dumps({"farm": farm.__dict__}), 200
 
     def delete_farm(self, farm_id):
@@ -79,7 +74,6 @@ class MiaLBBL(object):
         else:
             self.farms[farm_id] = None
             self.controller.delete_farm(farm_id)
-            self.instance_controller.rem_instance(farm_id=farm_id)
             for key, value in self.indexes.items():
                 if value == farm_id: self.indexes.pop(key)
             return json.dumps({"farm_id": farm_id}), 200
@@ -113,12 +107,6 @@ class MiaLBBL(object):
             farm.delete_member(member_id)
             self.controller.commit_farm(farm)
             return json.dumps({"member_id": member_id, "farm_id": farm_id}), 201
-
-    def create_farm_instance(self, farm_id, args):
-        if self.get_farm(farm_id) is None:
-            return json.dumps({"error": "farm not found"}), 404
-        instance_id = args["docker_uid"]
-        self.instance_controller.set_instance(farm_id=farm_id, instance_id=instance_id, host_ip=args['remote_addr'])
 
     def generate_farm_id(self):
         uid = uuid.uuid4() 

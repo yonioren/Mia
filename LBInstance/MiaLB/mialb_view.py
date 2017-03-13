@@ -19,8 +19,8 @@ from flask import request
 from flask.helpers import make_response
 from logging import getLogger
 
-from .mialb_entities import logger
-from .mialb_bl import MiaLBBL
+from mialb_entities import logger
+from mialb_bl import MiaLBBL
 
 logger = getLogger(__name__)
 
@@ -89,17 +89,6 @@ class MiaLBView:
         else:
             logger.debug("unknown method: {}".format(request.method.to_string()))
             raise("in MiaLBView.farm_member_api, unknown method: {}".format(request.method.to_string()))
-
-    def farm_instance_api(self, farm_id):
-        if request.method == 'GET':
-            pass
-        elif request.method == 'POST':
-            args = self.request_data(request)
-            args['remote_addr'] = request.remote_addr
-            return json.dumps(self.model.create_farm_instance(farm_id, args))
-        else:
-            logger.debug("unknown method: {}".format(request.method.to_string()))
-            raise("in MiaLBView.farm_instance_api, unknown method: {}".format(request.method.to_string()))
         
     @staticmethod
     def request_data(request):
@@ -127,9 +116,6 @@ class MiaLBView:
                  'methods': ['GET', 'POST']},
                 {'rule': '/MiaLB/farms/<string:farm_id>/members/<string:member_id>',
                  'view_func': self.farm_member_api,
-                 'methods': ['GET', 'DELETE']},
-                {'rule': '/MiaLB/farms/<string:farm_id>/instances',
-                 'view_func': self.farm_instance_api,
-                 'methods': ['GET', 'POST']}
+                 'methods': ['GET', 'DELETE']}
                 ]
         return routes

@@ -14,15 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
-import docker
-
 from logging import getLogger
 from threading import Thread
-from requests import get
-from time import sleep
 
+import docker
+from requests import get
+
+from LBInstance.MiaLB.mialb_configs import guess_MiaLB_url
 from SingleInstanceController import SingleInstanceController
-from LBManager.utils.mialb_configs import guess_MiaLB_url
 
 logger = getLogger(__name__)
 
