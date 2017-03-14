@@ -23,7 +23,6 @@ from time import sleep
 from docker import DockerClient
 from requests import get, post, delete
 
-from LBInstance.MiaLB.mialb_configs import guess_MiaLB_url
 from LBManager.utils.mialb_useful import get_ip
 
 logger = getLogger(__name__)
@@ -32,7 +31,7 @@ logger = getLogger(__name__)
 class DockerUpdater(object):
     def __init__(self, mialb_url=None, sleep_duration=15):
         self.client = DockerClient(base_url='http://localhost:2376')
-        self.mialb_url = mialb_url if mialb_url else guess_MiaLB_url()
+        self.mialb_url = mialb_url if mialb_url else None # guess_MiaLB_url()
         self.sleep_duration = sleep_duration
         self.members = {}
 
@@ -68,7 +67,7 @@ class DockerUpdater(object):
                     data=dumps({"member_id": str(task),
                                 "ip": str(addresses[0])}))
         # what ever left are obsolete members, and we'll delete them
-        for member in mia_members['forward']
+        for member in mia_members['forward']:
             delete(url="{mialb_url}/MiaLB/Farms/{farm_id}/members/{member_id}".format(
                 mialb_url=self.mialb_url,
                 farm_id=service_id,

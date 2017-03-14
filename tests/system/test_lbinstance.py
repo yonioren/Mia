@@ -59,4 +59,5 @@ class TestLBInstance(TestCase):
                                                                          port="777", farm=farm_id))
 
         self.assertEqual(get_res.status_code, 200)
-        self.assertEqual(get_res.json()['port'], 85)
+        self.assertEqual(get_res.json()[u'port'], 85)
+        self.assertEqual(get_res.json()[u'name'], u'test')

@@ -1,8 +1,17 @@
-'''
-Created on Apr 26, 2016
+#! /usr/bin/python
+# Copyright (C) 2016 Eitan Geiger
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-@author: geiger
-'''
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import errno
 
 from io import open
@@ -75,7 +84,7 @@ class MiaLBDAL(object):
     def configuration_string(farm):
         file_content = ""
         # build the farm members configuration section
-        file_content += file_content + 'upstream ' + str(farm.farm_id) + ' {\n'
+        file_content += file_content + 'upstream ' + str(farm.name) + ' {\n'
         if farm.lb_method not in ["", "round_robin"]:
             file_content += '\t' + farm.lb_method + ';\n'
         for member in farm.members.values():
