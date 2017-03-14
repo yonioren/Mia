@@ -13,34 +13,82 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from itertools import chain
-from json import dumps
-from logging import getLogger
-from re import sub
-from threading import Thread
-from time import sleep
 
 from docker import DockerClient
-from requests import get, post, delete
+from docker.types import RestartPolicy
+from time import sleep
 
-from LBManager.utils.mialb_useful import get_ip
-
-logger = getLogger(__name__)
+from LBManager.utils.mialb_manager_config import logger, swarm_manamger, lbimage, service_network
 
 
 class DockerUpdater(object):
-    def __init__(self, mialb_url=None, sleep_duration=15):
-        self.client = DockerClient(base_url='http://localhost:2376')
-        self.mialb_url = mialb_url if mialb_url else None # guess_MiaLB_url()
-        self.sleep_duration = sleep_duration
-        self.members = {}
+    def __init__(self):
+        self.client = DockerClient(base_url=swarm_manamger)
 
     def get_services(self):
-        docker_services = []
-        mia_services = get(url="{mialb_url}/MiaLB/farms".format(mialb_url=self.mialb_url))
+        lbed_services = []
+        mia_services = []
         for service in self.client.services.list():
-            docker_services.append(service.id)
-        return set(docker_services).intersection(mia_services)
+            if ('Labels' in service.attrs['Spec']
+                    and 'MiaLB' in service.attrs['Spec']['Labels']):
+                mia_services.append(service.id)
+            if ('Labels' in service.attrs['Spec']
+                    and 'LBMe' in service.attrs['Spec']['Labels']
+                    and str(service.attrs['Spec']['Labels']['LBMe']).lower() not in ['no', 'n', 'false']):
+                lbed_services.append(service.id)
+        return lbed_services, mia_services
+
+    def update(self):
+        lbed_services, mia_services = self.get_services()
+        services = {'existing': [], 'new': [], 'obsoletes': {'lbs': [], 'farms': []}}
+        for mia in mia_services:
+            flag = False
+            for farm in mia:
+                if farm.name in lbed_services:
+                    services['existing'].append(farm)
+                    lbed_services.remove(farm.name)
+                    flag = True
+                else:
+                    services['obsoletes']['farms'].append(farm)
+            if not flag:
+                services['obsoletes']['lbs'].append(mia)
+        for service in lbed_services:
+            services['new'].append(service)
+
+    def update_farm_members(self, farm):
+        docker_service = self.client.services.get(farm.name)
+        members = farm.members
+        for task in docker_service.tasks():
+            ip = self.client.containers.get(
+                task['Status']['ContainerStatus']['ContainerID']
+            ).attrs['NetworkSettings']['IPAddress']
+            if ip in members:
+                members.remove(ip)
+            else:
+                farm.add_member(ip)
+        for member in members:
+            farm.remove_member(member)
+
+    def create_farm(self, service_id):
+        members = []
+        for task in self.client.services.get(service_id).tasks():
+            members.append(self.client.containers.get(
+                task['Status']['ContainerStatus']['ContainerID']
+            ).attrs['NetworkSettings']['IPAddress'])
+        svc = self.client.services.create(image=lbimage,
+                                          labels={'MiaLB': str(service_id)},
+                                          restart_policy=RestartPolicy(condition='on-failure'),
+                                          env=['MIA_PORT=666', 'MIA_HOST=0.0.0.0'],
+                                          networks=[service_network],
+                                          replicas=1)
+        # sleep because it takes time for docker to allocate ip
+        sleep(0.1)
+        svc = self.client.services.get(svc.id)
+
+
+
+"""
+    # mia_services = get(url="{mialb_url}/MiaLB/farms".format(mialb_url=self.mialb_url))
 
     def compare_service(self, service_id):
         docker_tasks = self._get_service_tasks(service=service_id)
@@ -73,7 +121,6 @@ class DockerUpdater(object):
                 farm_id=service_id,
                 member_id=str(member)
             ))
-
 
         docker_tasks = set(docker_tasks)
         mia_members = set(mia_members)
@@ -115,3 +162,4 @@ class DockerUpdater(object):
     def background_update(self):
         Thread(target=self.update_service, args=[self])
         sleep(self.sleep_duration)
+"""
