@@ -31,7 +31,7 @@ class TestLBInstance(TestCase):
     def setUp(self):
         self.client = docker_from_env()
         self.mia = self.client.containers.run(image="mialb:system-test", detach=True, environment={"MIA_PORT": "777"})
-        sleep(0.2)
+        sleep(0.5)
         self.mia = self.client.containers.get(self.mia.attrs['Id'])
         self.mia_ip = self.mia.attrs['NetworkSettings']['IPAddress']
 
@@ -59,5 +59,5 @@ class TestLBInstance(TestCase):
                                                                          port="777", farm=farm_id))
 
         self.assertEqual(get_res.status_code, 200)
-        self.assertEqual(get_res.json()[u'port'], 85)
+        self.assertEqual(get_res.json()[u'port'], [85])
         self.assertEqual(get_res.json()[u'name'], u'test')

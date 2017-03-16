@@ -16,14 +16,21 @@
 
 from docker import DockerClient
 from docker.types import RestartPolicy
+from itertools import chain
+from re import sub
 from time import sleep
+from os import popen
+from threading import Thread
 
-from LBManager.utils.mialb_manager_config import logger, swarm_manamger, lbimage, service_network
+from LBManager.MiaLBUpdater.MiaLB import Farm, MiaLB
+from LBManager.utils.mialb_manager_config import logger, swarm_manamger, lbimage, \
+    service_network, service_create_timeout
 
 
 class DockerUpdater(object):
     def __init__(self):
         self.client = DockerClient(base_url=swarm_manamger)
+
 
     def get_services(self):
         lbed_services = []
@@ -54,6 +61,7 @@ class DockerUpdater(object):
                 services['obsoletes']['lbs'].append(mia)
         for service in lbed_services:
             services['new'].append(service)
+            Thread(target=self.create_farm, kwargs={'service_id': service}).start()
 
     def update_farm_members(self, farm):
         docker_service = self.client.services.get(farm.name)
@@ -70,22 +78,81 @@ class DockerUpdater(object):
             farm.remove_member(member)
 
     def create_farm(self, service_id):
-        members = []
-        for task in self.client.services.get(service_id).tasks():
-            members.append(self.client.containers.get(
-                task['Status']['ContainerStatus']['ContainerID']
-            ).attrs['NetworkSettings']['IPAddress'])
+        members = [self.client.containers.get(task['Status']['ContainerStatus']['ContainerID'])
+                   for task in self.client.services.get(service_id).tasks()]
+        member_networks = [net['NetworkID']
+                           for net in list(chain(*[container.attrs['NetworkSettings']['Networks'].values()
+                                                   for container in members]))]
         svc = self.client.services.create(image=lbimage,
+                                          name=service_id,
                                           labels={'MiaLB': str(service_id)},
                                           restart_policy=RestartPolicy(condition='on-failure'),
                                           env=['MIA_PORT=666', 'MIA_HOST=0.0.0.0'],
-                                          networks=[service_network],
-                                          replicas=1)
+                                          networks=member_networks)
+
         # sleep because it takes time for docker to allocate ip
-        sleep(0.1)
+        if not self.wait_for_container(svc):
+            logger.error("mialb service creation failed!")
+            raise IOError("mialb service creation failed!")
         svc = self.client.services.get(svc.id)
 
+        ip = self.wait_for_ip(svc.tasks()[0]['Status']['ContainerStatus']['ContainerID'])
+        if not ip:
+            logger.error("mialb service creation failed!")
+            raise IOError("mialb service creation failed!")
+        temp = self.client.containers.get(
+            self.client.services.get(service_id).tasks()[0]['Status']['ContainerStatus']['ContainerID']
+        )
+        target_ports = [sub(r'/.*$', '', t_port) for t_port in temp.attrs['NetworkSettings']['Ports'].keys()]
+        mia = MiaLB(url="http://{ip}:{port}".format(ip=ip, port="666"))
+        farm = mia.add_farm(name=str(service_id), port=target_ports)
+        for member in members:
+            farm.add_member(ip=self.wait_for_ip(member.id))
+        return svc, "http://{ip}:{port}".format(ip=ip, port="666"), farm.fid
 
+    def wait_for_container(self, svc):
+        flag = True
+        i = 0
+        while flag and i < service_create_timeout:
+            svc = self.client.services.get(svc.id)
+            if svc.tasks()[0]['Status']['State'].lower() in ['running', 'rejected']:
+                flag = False
+            else:
+                if i < 3:
+                    i += 0.1
+                    sleep(0.1)
+                elif i < 15:
+                    i += 1
+                    sleep(1)
+                else:
+                    i += 10
+                    sleep(i)
+        return not flag
+
+    def wait_for_ip(self, cid):
+        flag = True
+        i = 0
+        while flag and i < service_create_timeout:
+            for line in popen("docker exec -i {cid} ip route show".format(cid=cid)).readlines():
+                l = line.split()
+                if l[0] == 'default':
+                    dev = l[l.index('dev') + 1]
+            try:
+                l = popen("docker exec -i {cid} ip addr show {dev}".format(cid=cid, dev=dev)).read().split()
+                ip = l[l.index("inet") + 1]
+                if ip:
+                    return sub(r'/[0-9]*', '', ip)
+            except (IndexError, UnboundLocalError):
+                if i < 3:
+                    i += 0.1
+                    sleep(0.1)
+                elif i < 15:
+                    i += 1
+                    sleep(1)
+                else:
+                    i += 10
+                    sleep(i)
+        return False
 
 """
     # mia_services = get(url="{mialb_url}/MiaLB/farms".format(mialb_url=self.mialb_url))

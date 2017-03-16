@@ -92,7 +92,11 @@ class MiaLBDAL(object):
         file_content += '}\n'
         # build the farm configuration section
         file_content += 'server {\n'
-        file_content += '\tlisten ' + str(farm.ip) + ':' + str(farm.port) + ';\n'
+        if isinstance(farm.port, list):
+            for port in farm.port:
+                file_content += '\tlisten ' + str(farm.ip) + ':' + str(port) + ';\n'
+        else:
+            file_content += '\tlisten ' + str(farm.ip) + ':' + str(farm.port) + ';\n'
         file_content += '\tlocation ' + str(farm.location) + ' {\n'
         file_content += '\t\tproxy_pass ' + str(farm.protocol) + '://' + str(farm.farm_id) + ';\n'
         file_content += '\t}\n'
@@ -166,9 +170,15 @@ class MiaLBDAL(object):
                 if ':' in listen:
                     listen = listen.split(':')
                     farm_args['ip'] = listen[0]
-                    farm_args['port'] = listen[1]
+                    if 'port' not in farm_args:
+                        farm_args['port'] = [listen[1]]
+                    else:
+                        farm_args['port'].append(listen[1])
                 else:
-                    farm_args['port'] = listen
+                    if 'port' not in farm_args:
+                        farm_args['port'] = [listen]
+                    else:
+                        farm_args['port'].append(listen)
             elif head == 'location':
                 farm_args['location'] = str(content.pop())
                 if str(content.pop()) == '{':

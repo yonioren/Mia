@@ -48,9 +48,15 @@ class Farm:
             if lb_method == LB_METHOD:
                 self.lb_method = lb_method
         if 'port' in args:
-            port = int(args.pop('port'))
-            if MIN_PORT <= port <= MAX_PORT:
-                self.port = port
+            port = args.pop('port')
+            try:
+                port = int(port)
+                if MIN_PORT <= port <= MAX_PORT:
+                    self.port = [port]
+            # conversion failed
+            except TypeError:
+                self.port = [int(p) if MIN_PORT <= int(p) <= MAX_PORT else None for p in port]
+
         if 'location' in args:
             self.location = args.pop('location')
         if 'protocol' in args:

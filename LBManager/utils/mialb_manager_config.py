@@ -21,7 +21,9 @@ from logging import getLogger, basicConfig
 
 logger = getLogger(__name__)
 
-conf_file_order = ['/etc/Mia/mialb.conf', '~/.Mia/mialb.conf', '/software/Mia/LBManager/mialb.conf']
+conf_file_order = ['/etc/Mia/mialb.conf',
+                   '{home}/.Mia/mialb.conf'.format(home=os.path.expanduser('~')),
+                   '/software/Mia/LBManager/mialb.conf']
 cp = ConfigParser()
 cp.read(filenames=conf_file_order)
 
@@ -58,3 +60,4 @@ swarm_manamger = read_with_default(section='docker', option='manager_url', defau
 lbimage = read_with_default(section='docker', option='lb_image', default="mialb:latest")
 service_network = read_with_default(section='docker', option='docker_network', default="services")
 service_cidr = read_with_default(section='docker', option='cidr', default="services")
+service_create_timeout = read_with_default(section='docker', option='service_create_timeout', default="300")
