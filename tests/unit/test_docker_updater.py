@@ -115,3 +115,10 @@ class TestDockerUpdater(TestCase):
         get_res = get(url="{url}/MiaLB/farms/{fid}".format(url=url, fid=farm_id))
         self.assertEqual(get_res.status_code, 200)
         self.assertEqual(get_res.json()['members'].__len__(), 1)
+
+    def test_remove_farm(self):
+        tblb, miasvc, url, farm_id = self._initialize_farm_and_lb()
+        self.docker_updater.remove_farm(farm=Farm(fid=farm_id, url=url))
+
+        tblb = self.docker_client.services(filters={'id': tblb['ID']})
+        self.assertEqual(tblb.__len__(), 0)

@@ -60,8 +60,14 @@ class DockerUpdater(object):
             services['new'].append(service)
             Thread(target=self.create_farm, kwargs={'service_id': service}).start()
 
+    def remove_farm(self, farm):
+        name = farm.name
+        farm.remove_farm()
+        if self.client.services(filters={'name': [name]}).__len__() == 1:
+            self.client.remove_service(name)
+
     def update_farm_members(self, farm):
-        docker_service = self.client.services(filters={'name': [farm.name]})[0]
+        docker_service = self.client.services(filters={'id': [farm.name]})[0]
         members = farm.members
         for task in self.client.tasks({'service': docker_service['ID']}):
             ip = self.wait_for_ip(task['Status']['ContainerStatus']['ContainerID'])

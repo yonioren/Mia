@@ -92,6 +92,13 @@ class Farm(object):
                         member=member_url
                     ))
                     return True
+        return False
+
+    def remove_farm(self):
+        del_res = delete("{mia_url}/MiaLB/farms/{farm}".format(mia_url=self.url, farm=self.fid))
+        if 200 <= del_res.status_code < 300:
+            return True
+        return False
 
     @staticmethod
     def _get_url(ip=None, url=None, port=None):
