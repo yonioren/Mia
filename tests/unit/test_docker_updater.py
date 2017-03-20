@@ -15,13 +15,13 @@
 
 from docker import from_env as docker_from_env
 from docker.errors import APIError, NotFound
-from json import loads
 from os import path
-from requests import get, post, delete
+from requests import get
 from time import sleep
 from unittest import TestCase
 
 from LBManager.MiaLBUpdater.DockerUpdater import DockerUpdater
+from LBManager.MiaLBUpdater.MiaLB import Farm
 from LBManager.utils.mialb_manager_config import logger
 
 
@@ -29,7 +29,7 @@ class TestDockerUpdater(TestCase):
     @classmethod
     def setUpClass(cls):
         client = docker_from_env()
-        cls.image = client.images.build(path=path.join(path.dirname(__file__), '../../LBInstance'),
+        cls.image = client.build(path=path.join(path.dirname(__file__), '../../LBInstance'),
                                         tag="mialb:test")
 
     def setUp(self):
@@ -37,30 +37,62 @@ class TestDockerUpdater(TestCase):
         self.docker_client = docker_from_env()
         self._clean_docker()
         try:
-            self.service_net = self.docker_client.networks.get("unit-test-services-net")
+            self.service_net = self.docker_client.networks(names=["unit-test-services-net"])
         except NotFound:
-            self.service_net = self.docker_client.networks.create(name="unit-test-services-net", driver="overlay")
+            self.service_net = self.docker_client.create_network(name="unit-test-services-net", driver="overlay")
         except APIError:
             logger.warning("couldn't create unit-test-services-net")
 
     def tearDown(self):
         self._clean_docker()
 
-    def test_create_farm(self):
-        tblb = self.docker_client.services.create(image="nginx", labels={'LBMe': 'yes'},
-                                                  networks=["unit-test-services-net"])
-        sleep(1)
-        miasvc, url, farm_id = self.docker_updater.create_farm(tblb.id)
-        self.assertIsNotNone(miasvc)
-
-        # get_res = get()
-
     def _clean_docker(self):
-        for service in self.docker_client.services.list():
-            service.remove()
-        for container in self.docker_client.containers.list():
+        for service in self.docker_client.services():
+            self.docker_client.remove_service(resource_id=service['ID'])
+        for container in self.docker_client.containers():
             try:
-                container.kill()
-                container.remove()
+                self.docker_client.kill(container=container)
+                self.docker_client.remove_container(container=container)
             except APIError:
                 pass
+
+    def _initialize_farm_and_lb(self):
+
+        tblb = self.docker_client.create_service(task_template={"ContainerSpec": {"Image": "nginx"}},
+                                                 labels={'LBMe': 'yes'},
+                                                 networks=[{"Target": "unit-test-services-net"}],
+                                                 name="unit-test-lbed-services",
+                                                 mode={'Replicated': {'Replicas': 1}})
+        sleep(1)
+        tblb = self.docker_client.services(filters={'id': tblb['ID']})[0]
+        miasvc, url, farm_id = self.docker_updater.create_farm(tblb['ID'])
+        return tblb, miasvc, url, farm_id
+
+    def test_create_farm(self):
+        tblb, miasvc, url, farm_id = self._initialize_farm_and_lb()
+        self.assertIsNotNone(miasvc)
+
+        get_res = get(url="{url}/MiaLB/farms/{fid}".format(url=url, fid=farm_id))
+        self.assertEqual(get_res.status_code, 200)
+        self.assertEqual(get_res.json()['members'].__len__(), 1)
+
+    def test_update_farm_scale_up(self):
+        # initialize farm
+        tblb, miasvc, url, farm_id = self._initialize_farm_and_lb()
+#        tblb['Id'] = tblb['ID']
+        # scale up farm service
+        self.docker_client.update_service(tblb['ID'],
+                                          version=self.docker_client.inspect_service(tblb['ID'])['Version']['Index'],
+                                          task_template={"ContainerSpec": {"Image": "nginx"}},
+                                          networks=[{"Target": "unit-test-services-net"}],
+                                          name="unit-test-lbed-services",
+                                          labels={'LBMe': 'yes'},
+                                          mode={'Replicated': {'Replicas': 2}})
+        sleep(1)
+
+        self.docker_updater.update_farm_members(farm=Farm(fid=farm_id, url=url))
+
+        # assert mialb was updated
+        get_res = get(url="{url}/MiaLB/farms/{fid}".format(url=url, fid=farm_id))
+        self.assertEqual(get_res.status_code, 200)
+        self.assertEqual(get_res.json()['members'].__len__(), 2)

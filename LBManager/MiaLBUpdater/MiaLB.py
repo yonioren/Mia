@@ -23,6 +23,7 @@ from LBManager.utils.mialb_useful import get_ip
 
 class MiaLB(object):
     def __init__(self, url):
+        self.farms = []
         self.url = url
         farms = get(url="{url}/MiaLB/farms".format(url=self.url))
         if farms.status_code != 200:
@@ -45,7 +46,8 @@ class MiaLB(object):
                    json=kwargs)
         if 200 <= res.status_code < 300:
             fid = loads(res.json()['farm'])['farm_id']
-            return Farm(fid=fid, url=self.url, name=name)
+            self.farms.append(Farm(fid=fid, url=self.url, name=name))
+            return self.farms[-1]
         else:
             logger.warning("failed to create farm {name}, got HTTP {code}".format(name=name, code=res.status_code))
             logger.debug("full response was {}".format(res.text))
@@ -89,5 +91,8 @@ class Farm(object):
             return None
         raw = get(url="{url}/MiaLB/farms/{farm}".format(url=self.url, farm=self.fid))
         self.name = raw.json()['name']
-        for member in raw.json()['members']:
+        ###   DEBUG   ###
+        members = raw.json()['members']
+        ### END DEBUG ###
+        for member in raw.json()['members'].values():
             get_ip(sub(r'^([a-zA-Z0-9]*://)?([a-zA-Z0-9\.]*)(:[0-9]+)(/.*)', r'\2', member['url']))
