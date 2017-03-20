@@ -62,7 +62,7 @@ class TestDockerUpdater(TestCase):
                                                  labels={'LBMe': 'yes'},
                                                  networks=[{"Target": "unit-test-services-net"}],
                                                  name="unit-test-lbed-services",
-                                                 mode={'Replicated': {'Replicas': 1}})
+                                                 mode={'Replicated': {'Replicas': 2}})
         sleep(1)
         tblb = self.docker_client.services(filters={'id': tblb['ID']})[0]
         miasvc, url, farm_id = self.docker_updater.create_farm(tblb['ID'])
@@ -74,12 +74,12 @@ class TestDockerUpdater(TestCase):
 
         get_res = get(url="{url}/MiaLB/farms/{fid}".format(url=url, fid=farm_id))
         self.assertEqual(get_res.status_code, 200)
-        self.assertEqual(get_res.json()['members'].__len__(), 1)
+        self.assertEqual(get_res.json()['members'].__len__(), 2)
 
     def test_update_farm_scale_up(self):
         # initialize farm
         tblb, miasvc, url, farm_id = self._initialize_farm_and_lb()
-#        tblb['Id'] = tblb['ID']
+
         # scale up farm service
         self.docker_client.update_service(tblb['ID'],
                                           version=self.docker_client.inspect_service(tblb['ID'])['Version']['Index'],
@@ -87,12 +87,31 @@ class TestDockerUpdater(TestCase):
                                           networks=[{"Target": "unit-test-services-net"}],
                                           name="unit-test-lbed-services",
                                           labels={'LBMe': 'yes'},
-                                          mode={'Replicated': {'Replicas': 2}})
+                                          mode={'Replicated': {'Replicas': 3}})
         sleep(1)
-
         self.docker_updater.update_farm_members(farm=Farm(fid=farm_id, url=url))
 
         # assert mialb was updated
         get_res = get(url="{url}/MiaLB/farms/{fid}".format(url=url, fid=farm_id))
         self.assertEqual(get_res.status_code, 200)
-        self.assertEqual(get_res.json()['members'].__len__(), 2)
+        self.assertEqual(get_res.json()['members'].__len__(), 3)
+
+    def test_update_farm_scale_down(self):
+        # initialize farm
+        tblb, miasvc, url, farm_id = self._initialize_farm_and_lb()
+
+        # scale down farm service
+        self.docker_client.update_service(tblb['ID'],
+                                          version=self.docker_client.inspect_service(tblb['ID'])['Version']['Index'],
+                                          task_template={"ContainerSpec": {"Image": "nginx"}},
+                                          networks=[{"Target": "unit-test-services-net"}],
+                                          name="unit-test-lbed-services",
+                                          labels={'LBMe': 'yes'},
+                                          mode={'Replicated': {'Replicas': 1}})
+        sleep(1)
+        self.docker_updater.update_farm_members(farm=Farm(fid=farm_id, url=url))
+
+        # assert mialb was updated
+        get_res = get(url="{url}/MiaLB/farms/{fid}".format(url=url, fid=farm_id))
+        self.assertEqual(get_res.status_code, 200)
+        self.assertEqual(get_res.json()['members'].__len__(), 1)

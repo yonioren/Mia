@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from json import loads
 from re import sub
-from requests import get, post
+from requests import get, post, delete
 
 from LBManager.utils.mialb_manager_config import logger
 from LBManager.utils.mialb_useful import get_ip
@@ -68,13 +68,7 @@ class Farm(object):
         self._get_params()
 
     def add_member(self, ip=None, url=None, port=None):
-        if not ip and not url:
-            raise AttributeError("must accept either ip or url")
-        elif not url:
-            if not port:
-                url = ip
-            else:
-                url = "{ip}:{port}".format(ip=ip, port=port)
+        url = self._get_url(ip=ip, url=url, port=port)
         res = post(url="{mia_url}/MiaLB/farms/{farm}/members".format(mia_url=self.url, farm=self.fid),
                    headers={'Content-Type': 'application/json'},
                    json={'url': url})
@@ -86,6 +80,30 @@ class Farm(object):
             logger.debug("full response was {}".format(res.text))
             raise IndexError("failed to member {member} to farm {farm}".format(member=url, farm=self.fid,))
 
+    def remove_member(self, ip=None, url=None, port=None):
+        member_url = self._get_url(ip=ip, url=url, port=port)
+        get_res = get("{mia_url}/MiaLB/farms/{farm}/members".format(mia_url=self.url, farm=self.fid))
+        if 200 <= get_res.status_code < 300:
+            for url in get_res.json():
+                if url == '"{member_url}"'.format(member_url=member_url):
+                    delete("{mia_url}/MiaLB/farms/{farm}/members/{member}".format(
+                        mia_url=self.url,
+                        farm=self.fid,
+                        member=member_url
+                    ))
+                    return True
+
+    @staticmethod
+    def _get_url(ip=None, url=None, port=None):
+        if not ip and not url:
+            raise AttributeError("must accept either ip or url")
+        elif not url:
+            if not port:
+                url = ip
+            else:
+                url = "{ip}:{port}".format(ip=ip, port=port)
+        return url
+
     def _get_params(self):
         if self.url == "":
             return None
@@ -95,4 +113,4 @@ class Farm(object):
         members = raw.json()['members']
         ### END DEBUG ###
         for member in raw.json()['members'].values():
-            get_ip(sub(r'^([a-zA-Z0-9]*://)?([a-zA-Z0-9\.]*)(:[0-9]+)(/.*)', r'\2', member['url']))
+            self.members.append(get_ip(sub(r'^([a-zA-Z0-9]*://)?([a-zA-Z0-9\.]*)(:[0-9]+)(/.*)', r'\2', member['url'])))
