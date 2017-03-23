@@ -4,6 +4,7 @@
 my_ip=`ip -4 addr show ${default_interface} | grep -e "^\s*inet\s" | sed 's/^\s*inet\s\([0-9\.]*\)\/.*/\1/'`
 
 /usr/bin/python2.7 /MiaLB/api_router.py --run-damn-you &
+/usr/bin/python2.7 /MiaUpdater/update_daemon.py &
 
 flag=0
 if [ $flag -eq 0 ]

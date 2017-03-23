@@ -3,6 +3,7 @@ RUN apt-get update
 RUN apt-get install -y python-flask
 COPY startup.sh /startup.sh
 COPY MiaLB /MiaLB
+COPY MiaUpdater /MiaUpdater
 RUN chmod +x /startup.sh
 RUN rm -f /etc/nginx/conf.d/default.conf
 CMD /bin/bash /startup.sh
