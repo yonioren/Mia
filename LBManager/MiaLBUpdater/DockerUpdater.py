@@ -33,13 +33,13 @@ class DockerUpdater(object):
         lbed_services = []
         mia_services = []
         for service in self.client.services():
-            if ('Labels' in service.attrs['Spec']
-                    and 'MiaLB' in service.attrs['Spec']['Labels']):
-                mia_services.append(service.id)
-            if ('Labels' in service.attrs['Spec']
-                    and 'LBMe' in service.attrs['Spec']['Labels']
-                    and str(service.attrs['Spec']['Labels']['LBMe']).lower() not in ['no', 'n', 'false']):
-                lbed_services.append(service.id)
+            if ('Labels' in service['Spec']
+                    and 'MiaLB' in service['Spec']['Labels']):
+                mia_services.append(service['ID'])
+            if ('Labels' in service['Spec']
+                    and 'LBMe' in service['Spec']['Labels']
+                    and str(service['Spec']['Labels']['LBMe']).lower() not in ['no', 'n', 'false']):
+                lbed_services.append(service['ID'])
         return lbed_services, mia_services
 
     def update(self):

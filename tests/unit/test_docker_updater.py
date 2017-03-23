@@ -122,3 +122,16 @@ class TestDockerUpdater(TestCase):
 
         tblb = self.docker_client.services(filters={'id': tblb['ID']})
         self.assertEqual(tblb.__len__(), 0)
+
+    def test_docker_update_single_lbed(self):
+        tblb = self.docker_client.create_service(task_template={"ContainerSpec": {"Image": "nginx"}},
+                                                 labels={'LBMe': 'yes'},
+                                                 networks=[{"Target": "unit-test-services-net"}],
+                                                 name="unit-test-lbed-services",
+                                                 mode={'Replicated': {'Replicas': 2}})
+        sleep(1)
+        tblb = self.docker_client.services(filters={'id': tblb['ID']})[0]
+
+        self.docker_updater.update()
+        miasvc = self.docker_client.services(filters={'name': tblb['ID']})
+        self.assertEqual(miasvc.__len__(), 1)
