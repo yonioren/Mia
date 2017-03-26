@@ -15,13 +15,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from json import loads
 from re import sub
+
 from requests import get, post, delete
 
-from LBManager.utils.mialb_manager_config import logger
-from LBManager.utils.mialb_useful import get_ip
+from MiaUtils.mialb_configs import logger
+from MiaUtils.mialb_useful import get_ip
 
 
-class MiaLB(object):
+class MiaClient(object):
     def __init__(self, url):
         self.farms = []
         self.url = url

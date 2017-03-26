@@ -1,4 +1,4 @@
 flask
-docker
+docker >= 2.1
 configparser
 nose

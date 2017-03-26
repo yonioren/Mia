@@ -20,7 +20,7 @@ from threading import Thread
 import docker
 from requests import get
 
-from LBInstance.MiaLB.mialb_configs import guess_MiaLB_url
+from LBInstance.MiaUtils.mialb_configs import guess_MiaLB_url
 from SingleInstanceController import SingleInstanceController
 
 logger = getLogger(__name__)

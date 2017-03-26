@@ -12,7 +12,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from docker import from_env as docker_from_env
+from docker import APIClient
 from docker.errors import APIError
 from docker.types.networks import IPAMConfig, IPAMPool
 from logging import getLogger
@@ -27,18 +27,26 @@ logger = getLogger(__name__)
 class TestMiaUpdater(TestCase):
     @classmethod
     def setUpClass(cls):
-        client = docker_from_env()
+        client = APIClient(base_url="http://localhost:2376")
         cls.image = client.build(path=path.join(path.dirname(__file__), '../../LBInstance'),
-                                        tag="mialb:test")
+                                 tag="mialb:system-test")
 
     @classmethod
     def tearDownClass(cls):
-        client = docker_from_env()
-        client.images.remove(str(cls.image.id))
+        client = APIClient(base_url="http://localhost:2376")
+        try:
+            client.remove_image("mialb:system-test")
+        except APIError:
+            sleep(0.5)
+            try:
+                client.remove_image("mialb:system-test")
+            except APIError:
+                pass
 
     def _clean_docker(self):
         for service in self.docker_client.services():
             self.docker_client.remove_service(resource_id=service['ID'])
+        sleep(0.2)
         for container in self.docker_client.containers():
             try:
                 self.docker_client.kill(container=container)
@@ -47,7 +55,7 @@ class TestMiaUpdater(TestCase):
                 pass
 
     def setUp(self):
-        self.docker_client = docker_from_env()
+        self.docker_client = APIClient(base_url="http://localhost:2376")
         self._clean_docker()
         try:
             if self.docker_client.networks(names=["system-test-services"]):

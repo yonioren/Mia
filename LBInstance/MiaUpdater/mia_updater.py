@@ -14,11 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from docker import Client
+from docker import APIClient
 from os import environ
 from socket import gethostbyname_ex
 
-from MiaLB import MiaLB
+from MiaClient import MiaClient
 
 
 class MiaUpdater(object):
@@ -34,15 +34,16 @@ class MiaUpdater(object):
         if 'MIALB_EXTERNAL_PORTS' in environ:
             return environ.get('MIALB_EXTERNAL_PORTS').split(',')
         else:
-            client = Client(base_url="172.18.0.1:2376")
+            client = APIClient(base_url="172.18.0.1:2376")
             return [t_port['PrivatePort'] for t_port in client.containers(
                 filters={'id': [
                     client.tasks({'service': self.target_service})[0]['Status']['ContainerStatus']['ContainerID']]}
             )[0]['Ports']]
 
     def _init_external_network(self):
-        client = Client(base_url="172.18.0.1:2376")
-        client.connect_container_to_network("{self}", self.external_network, ipv4_address=self.external_ip)
+        client = APIClient(base_url="172.18.0.1:2376")
+        client.connect_container_to_network("{self}".format(self=environ.get('HOSTNAME')),
+                                            self.external_network, ipv4_address=self.external_ip)
 
     """
     def get_services(self):
@@ -94,7 +95,7 @@ class MiaUpdater(object):
 
     def create_farm(self):
         members = gethostbyname_ex("tasks.{service}".format(service=self.target_service))
-        mia = MiaLB(url="http://127.0.0.1:{port}".format(port="666"))
+        mia = MiaClient(url="http://127.0.0.1:{port}".format(port="666"))
         farm = mia.add_farm(name=str(self.target_service), port=self.target_ports)
         for member in members:
             farm.add_member(ip=member)
