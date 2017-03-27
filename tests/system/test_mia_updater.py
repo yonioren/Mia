@@ -76,26 +76,65 @@ class TestMiaUpdater(TestCase):
         except APIError:
             logger.warning("unit-test-services-net")
 
-
     def tearDown(self):
         self._clean_docker()
 
-    def test_setup(self):
+    def get_mia_ip(self, mia):
+        for i in xrange(1, 60):
+            try:
+                container = self.docker_client.containers(
+                    filters={'id': self.docker_client.tasks(
+                        filters={'service': mia}
+                    )[0]['Status']['ContainerStatus']['ContainerID']}
+                )[0]
+                if container['NetworkSettings']['Networks']['system-test-services']['IPAddress']:
+                    return container['NetworkSettings']['Networks']['system-test-services']['IPAddress']
+                else:
+                    sleep(1)
+            except KeyError:
+                sleep(1)
+        return False
+
+    def _initialize_mialb(self):
         tblb = self.docker_client.create_service(task_template={"ContainerSpec": {"Image": "nginx"}},
                                                  labels={'LBMe': 'yes'},
                                                  networks=[{"Target": "unit-test-services-net"}],
                                                  name="system-test-lbed-services",
-                                                 mode={'Replicated': {'Replicas': 2}})
+                                                 mode={'Replicated': {'Replicas': 2}})['ID']
         sleep(1)
         mia = self.docker_client.create_service(task_template={"ContainerSpec": {"Image": "mialb:system-test",
-                                                                          "Env": ['MIA_PORT=666',
-                                                                                  'MIA_HOST=0.0.0.0',
-                                                                                  'MIALB_TARGET_SERVICE=system-test-lbed-services',
-                                                                                  'MIALB_EXTERNAL_NET=system-test-services',
-                                                                                  'MIALB_EXTERNAL_IP=172.168.52.101']},
+                                                                                 "Env": ['MIA_PORT=666',
+                                                                                         'MIA_HOST=0.0.0.0',
+                                                                                         'MIALB_TARGET_SERVICE=system-test-lbed-services',
+                                                                                         'MIALB_EXTERNAL_NET=system-test-services']},
                                                                "RestartPolicy": {"Condition": "any"}},
-                                                name=tblb['ID'],
-                                                labels={'MiaLB': str(tblb['ID'])},
-                                                networks=[{"Target": "unit-test-services-net"}])
+                                                name="mialb-{id}".format(id=tblb),
+                                                labels={'MiaLB': str(tblb)},
+                                                networks=[{"Target": "unit-test-services-net"}])['ID']
         sleep(1)
-        self.assertEqual(get(url="http://172.168.52.101:666/MiaLB/farms").status_code, 200)
+        mia_ip = self.get_mia_ip(mia)
+        return {'target-service': tblb, 'mialb-service': mia, 'mialb-ip': mia_ip}
+
+    def test_setup(self):
+        setup = self._initialize_mialb()
+        self.assertEqual(get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).status_code, 200)
+        self.assertEqual(get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).json().__len__(), 1)
+
+    def test_scale_up(self):
+        setup = self._initialize_mialb()
+        farm = False
+        for i in xrange(1, 181):
+            #x = get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).json()
+            if get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).json() == []:
+                sleep(1)
+            elif not farm:
+                farm = get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).json()[0][1:-1]
+            else:
+                pass
+        x = get(url="http://{ip}:666/MiaLB/farms/{farm}".format(ip=setup['mialb-ip'], farm=farm)).json()
+        self.assertEqual(
+            get(
+                url="http://{ip}:666/MiaLB/farms/{farm}".format(ip=setup['mialb-ip'], farm=farm)
+            ).json()['members'].__len__(),
+            2
+        )

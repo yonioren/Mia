@@ -32,6 +32,7 @@ class MiaClient(object):
                                                                                     code=farms.status_code))
             logger.debug("HTTP response was {text}".format(text=farms.text))
         for farm in farms.json():
+            farm = sub(r'(^"|"$)', '', farm)
             self.farms.append(Farm(farm, self.url))
 
     def add_farm(self, name, **kwargs):

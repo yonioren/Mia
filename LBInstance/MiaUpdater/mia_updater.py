@@ -15,11 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from docker import APIClient
+from docker.errors import APIError
 from os import environ
+from requests.exceptions import ReadTimeout
 from socket import gethostbyname_ex
 
 from MiaClient import MiaClient
-
+from MiaUtils.mialb_useful import find_host_address
 
 class MiaUpdater(object):
     def __init__(self, target_service=None):
@@ -27,21 +29,24 @@ class MiaUpdater(object):
         self.external_network = environ.get('MIALB_EXTERNAL_NET', 'services')
         self.external_ip = environ.get('MIALB_EXTERNAL_IP', None)
         self.target_ports = self._init_target_ports()
-        self._init_external_network()
-        self.farm = self.create_farm(target_service)
+        try:
+            self._init_external_network()
+        except (APIError, ReadTimeout):
+            pass
+        self.farm = self.create_farm()
 
     def _init_target_ports(self):
         if 'MIALB_EXTERNAL_PORTS' in environ:
             return environ.get('MIALB_EXTERNAL_PORTS').split(',')
         else:
-            client = APIClient(base_url="172.18.0.1:2376")
+            client = APIClient(base_url="{host}:2376".format(host=find_host_address()))
             return [t_port['PrivatePort'] for t_port in client.containers(
                 filters={'id': [
                     client.tasks({'service': self.target_service})[0]['Status']['ContainerStatus']['ContainerID']]}
             )[0]['Ports']]
 
     def _init_external_network(self):
-        client = APIClient(base_url="172.18.0.1:2376")
+        client = APIClient(base_url="{host}:2376".format(host=find_host_address()))
         client.connect_container_to_network("{self}".format(self=environ.get('HOSTNAME')),
                                             self.external_network, ipv4_address=self.external_ip)
 
@@ -94,7 +99,7 @@ class MiaUpdater(object):
             farm.remove_member(ip=member)
 
     def create_farm(self):
-        members = gethostbyname_ex("tasks.{service}".format(service=self.target_service))
+        members = gethostbyname_ex("tasks.{service}".format(service=self.target_service))[2]
         mia = MiaClient(url="http://127.0.0.1:{port}".format(port="666"))
         farm = mia.add_farm(name=str(self.target_service), port=self.target_ports)
         for member in members:

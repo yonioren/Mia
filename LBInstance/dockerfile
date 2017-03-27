@@ -1,11 +1,11 @@
 FROM nginx
 RUN apt-get update
 RUN apt-get install -y python-flask python-pip
+RUN pip install docker
 COPY startup.sh /startup.sh
 COPY MiaLB /MiaLB
 COPY MiaUpdater /MiaUpdater
 COPY MiaUtils /MiaUtils
-RUN pip install docker
 RUN chmod +x /startup.sh
 RUN rm -f /etc/nginx/conf.d/default.conf
 RUN touch /__init__.py
