@@ -83,20 +83,20 @@ class MiaUpdater(object):
             Thread(target=self.create_farm, kwargs={'service_id': service}).start()
     """
 
-    def remove_farm(self, farm):
-        farm.remove_farm()
+    def remove_farm(self):
+        self.farm.remove_farm()
         exit(0)
 
-    def update_farm_members(self, farm):
-        tasks = gethostbyname_ex("tasks.{service}".format(farm.name))
-        members = farm.members
+    def update_farm_members(self):
+        tasks = gethostbyname_ex("tasks.{service}".format(self.farm.name))
+        members = self.farm.members
         for task in tasks:
             if task in members:
                 members.remove(task)
             else:
-                farm.add_member(ip=task)
+                self.farm.add_member(ip=task)
         for member in members:
-            farm.remove_member(ip=member)
+            self.farm.remove_member(ip=member)
 
     def create_farm(self):
         members = gethostbyname_ex("tasks.{service}".format(service=self.target_service))[2]

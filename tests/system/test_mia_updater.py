@@ -17,6 +17,7 @@ from docker.errors import APIError
 from docker.types.networks import IPAMConfig, IPAMPool
 from logging import getLogger
 from os import path
+from re import sub
 from requests import get
 from time import sleep
 from unittest import TestCase
@@ -117,24 +118,59 @@ class TestMiaUpdater(TestCase):
 
     def test_setup(self):
         setup = self._initialize_mialb()
+        for i in xrange(1, 181):
+            try:
+                self.assertEqual(get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).status_code, 200)
+                self.assertEqual(
+                    get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).json().__len__(),
+                    1
+                )
+                break
+            except AssertionError:
+                sleep(1)
         self.assertEqual(get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).status_code, 200)
         self.assertEqual(get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).json().__len__(), 1)
+        farm_id = sub(r'"', '', get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).json()[0])
+        self.assertEqual(
+            get(
+                url="http://{ip}:666/MiaLB/farms/{farm}".format(ip=setup['mialb-ip'], farm=farm_id)
+            ).json()['members'].__len__(),
+            2
+        )
 
     def test_scale_up(self):
         setup = self._initialize_mialb()
+        # baseline: ensure we're starting with 2 members
         farm = False
         for i in xrange(1, 181):
-            #x = get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).json()
-            if get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).json() == []:
+            if not get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).json():
                 sleep(1)
-            elif not farm:
-                farm = get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).json()[0][1:-1]
             else:
-                pass
-        x = get(url="http://{ip}:666/MiaLB/farms/{farm}".format(ip=setup['mialb-ip'], farm=farm)).json()
+                farm = get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).json()[0][1:-1]
+                break
         self.assertEqual(
             get(
                 url="http://{ip}:666/MiaLB/farms/{farm}".format(ip=setup['mialb-ip'], farm=farm)
             ).json()['members'].__len__(),
             2
         )
+        # scale up target service
+        self.docker_client.update_service(setup['target-service'],
+                                          version=self.docker_client.inspect_service(setup['target-service'])['Version']['Index'],
+                                          task_template={"ContainerSpec": {"Image": "nginx"}},
+                                          labels={'LBMe': 'yes'},
+                                          networks=[{"Target": "unit-test-services-net"}],
+                                          name="system-test-lbed-services",
+                                          mode={'Replicated': {'Replicas': 3}})
+        for i in xrange(1, 20):
+            try:
+                self.assertEqual(
+                    get(url="http://{ip}:666/MiaLB/farms/{farm}".format(ip=setup['mialb-ip'], farm=farm)
+                        ).json()['members'].__len__(), 3)
+                break
+            except AssertionError:
+                sleep(1)
+        self.assertEqual(
+            get(url="http://{ip}:666/MiaLB/farms/{farm}".format(ip=setup['mialb-ip'], farm=farm)
+                ).json()['members'].__len__(),
+            3)
