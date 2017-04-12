@@ -98,7 +98,7 @@ class MiaLBDAL(object):
         else:
             file_content += '\tlisten ' + str(farm.ip) + ':' + str(farm.port) + ';\n'
         file_content += '\tlocation ' + str(farm.location) + ' {\n'
-        file_content += '\t\tproxy_pass ' + str(farm.protocol) + '://' + str(farm.farm_id) + ';\n'
+        file_content += '\t\tproxy_pass ' + str(farm.protocol) + '://' + str(farm.name) + ';\n'
         file_content += '\t}\n'
         file_content += '}\n'
 

@@ -75,6 +75,7 @@ class Farm(object):
                    headers={'Content-Type': 'application/json'},
                    json={'url': url})
         if 200 <= res.status_code < 300:
+            self.members.append(url)
             return True
         else:
             logger.warning("failed to add member {member} to farm {farm}, "
@@ -93,6 +94,7 @@ class Farm(object):
                         farm=self.fid,
                         member=member_url
                     ))
+                    self.members.remove(member_url)
                     return True
         return False
 

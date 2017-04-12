@@ -50,53 +50,18 @@ class MiaUpdater(object):
         client.connect_container_to_network("{self}".format(self=environ.get('HOSTNAME')),
                                             self.external_network, ipv4_address=self.external_ip)
 
-    """
-    def get_services(self):
-        lbed_services = []
-        mia_services = []
-        for service in self.client.services():
-            if ('Labels' in service['Spec']
-                    and 'MiaLB' in service['Spec']['Labels']):
-                mia_services.append(service['ID'])
-            if ('Labels' in service['Spec']
-                    and 'LBMe' in service['Spec']['Labels']
-                    and str(service['Spec']['Labels']['LBMe']).lower() not in ['no', 'n', 'false']):
-                lbed_services.append(service['ID'])
-        return lbed_services, mia_services
-
-    def update(self):
-        lbed_services, mia_services = self.get_services()
-        services = {'existing': [], 'new': [], 'obsoletes': {'lbs': [], 'farms': []}}
-        for mia in mia_services:
-            flag = False
-            for farm in mia:
-                if farm.name in lbed_services:
-                    services['existing'].append(farm)
-                    lbed_services.remove(farm.name)
-                    flag = True
-                else:
-                    services['obsoletes']['farms'].append(farm)
-            if not flag:
-                services['obsoletes']['lbs'].append(mia)
-        for service in lbed_services:
-            services['new'].append(service)
-            Thread(target=self.create_farm, kwargs={'service_id': service}).start()
-    """
-
     def remove_farm(self):
         self.farm.remove_farm()
         exit(0)
 
     def update_farm_members(self):
-        tasks = gethostbyname_ex("tasks.{service}".format(self.farm.name))
-        members = self.farm.members
-        for task in tasks:
-            if task in members:
-                members.remove(task)
-            else:
-                self.farm.add_member(ip=task)
-        for member in members:
-            self.farm.remove_member(ip=member)
+        tasks = set(gethostbyname_ex("tasks.{service}".format(service=self.farm.name))[2])
+        members = set(self.farm.members)
+        for task in tasks - members:
+            self.farm.add_member(ip=task)
+        for task in members - tasks:
+            self.farm.remove_member(ip=task)
+
 
     def create_farm(self):
         members = gethostbyname_ex("tasks.{service}".format(service=self.target_service))[2]

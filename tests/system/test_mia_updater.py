@@ -174,3 +174,40 @@ class TestMiaUpdater(TestCase):
             get(url="http://{ip}:666/MiaLB/farms/{farm}".format(ip=setup['mialb-ip'], farm=farm)
                 ).json()['members'].__len__(),
             3)
+
+    def test_scale_down(self):
+        setup = self._initialize_mialb()
+        # baseline: ensure we're starting with 2 members
+        farm = False
+        for i in xrange(1, 181):
+            if not get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).json():
+                sleep(1)
+            else:
+                farm = get(url="http://{ip}:666/MiaLB/farms".format(ip=setup['mialb-ip'])).json()[0][1:-1]
+                break
+        self.assertEqual(
+            get(
+                url="http://{ip}:666/MiaLB/farms/{farm}".format(ip=setup['mialb-ip'], farm=farm)
+            ).json()['members'].__len__(),
+            2
+        )
+        # scale down target service
+        self.docker_client.update_service(setup['target-service'],
+                                          version=self.docker_client.inspect_service(setup['target-service'])['Version']['Index'],
+                                          task_template={"ContainerSpec": {"Image": "nginx"}},
+                                          labels={'LBMe': 'yes'},
+                                          networks=[{"Target": "unit-test-services-net"}],
+                                          name="system-test-lbed-services",
+                                          mode={'Replicated': {'Replicas': 1}})
+        for i in xrange(1, 20):
+            try:
+                self.assertEqual(
+                    get(url="http://{ip}:666/MiaLB/farms/{farm}".format(ip=setup['mialb-ip'], farm=farm)
+                        ).json()['members'].__len__(), 1)
+                break
+            except AssertionError:
+                sleep(1)
+        self.assertEqual(
+            get(url="http://{ip}:666/MiaLB/farms/{farm}".format(ip=setup['mialb-ip'], farm=farm)
+                ).json()['members'].__len__(),
+            1)
