@@ -56,7 +56,7 @@ class MiaLBDAL(object):
             item = members_args.popitem()
             members[item[0]] = FarmMember(url=item[0], weight=item[1])
         farm_args['members'] = members
-        return Farm(farm_id, farm_args)
+        return Farm(farm_id, **farm_args)
 
     def commit_farm(self, farm):
         file_content = self.configuration_string(farm)

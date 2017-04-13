@@ -14,15 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from docker import Client
 from itertools import chain
-from re import sub
-from time import sleep
 from os import popen
+from re import sub
 from threading import Thread
+from time import sleep
 
-from LBManager.MiaLBUpdater.MiaLB import Farm, MiaLB
-from LBManager.utils.mialb_manager_config import logger, swarm_manamger, lbimage, service_create_timeout
+from LBManager.MiaLBUpdater.MiaLB import MiaLB
+from docker import Client
+
+from suspected_obsoletes.LBManager.utils import logger, swarm_manamger, lbimage, service_create_timeout
 
 
 class DockerUpdater(object):

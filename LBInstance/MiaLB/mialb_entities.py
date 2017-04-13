@@ -29,59 +29,20 @@ LB_METHOD = 'round_robin'
 
 
 class Farm:
-    def __init__(self, farm_id, args={}):
+    def __init__(self, farm_id, **kwargs):
         self.farm_id = str(farm_id)
         # set defaults
-        self.lb_method = 'round_robin'
-        self.port = 80
-        self.location = '/'
-        self.protocol = 'http'
-        self.members = {}
-        self.ip = '0.0.0.0'
-        self.name = ""
-        # so long defaults
-        self.update_farm(args)
-
-    def update_farm(self, args):
-        if 'lb_method' in args:
-            lb_method = args.pop('lb_method')
-            if lb_method == LB_METHOD:
-                self.lb_method = lb_method
-        if 'port' in args:
-            port = args.pop('port')
-            try:
-                port = int(port)
-                if MIN_PORT <= port <= MAX_PORT:
-                    self.port = [port]
-            # conversion failed
-            except TypeError:
-                self.port = [int(p) if MIN_PORT <= int(p) <= MAX_PORT else None for p in port]
-
-        if 'location' in args:
-            self.location = args.pop('location')
-        if 'protocol' in args:
-            protocol = args.pop('protocol')
-            if protocol in PROTOCOLS:
-                self.protocol = protocol
-        if 'members' in args:
-            self.members = args.pop('members')
-        if 'ip' in args:
-            ip = args.pop('ip')
-            # check if ip is legal address
-            try:
-                socket.inet_aton(ip)
-                self.ip = ip
-            except socket.error:
-                # Not legal ip
-                pass
-        if 'name' in args:
-            self.name = args.pop('name')
-        else:
-            # name should not be empty
-            self.name = str(self.ip) + ":" + str(self.port) + '-' + str(self.location)
-            self.name = self.name.replace('/', '-')
-        for key in args.keys():
-            logger.debug("received unknown argument %s" % str(key))
+        self.lb_method = kwargs.get('lb_method', 'round_robin')
+        self.port = kwargs.get('port', 80)
+        self.location = kwargs.get('location', '/')
+        self.protocol = kwargs.get('protocol', 'http')
+        self.members = kwargs.get('members', {})
+        self.ip = kwargs.get('ip', '0.0.0.0')
+        self.name = kwargs.get('name', str(self.ip) + ":" + str(self.port) + '-' + str(self.location).replace('/', '-'))
+        self.server_name = kwargs.get('server_name', None)
+        self.ssl =kwargs.get('ssl', False)
+        self.ssl_cert = kwargs.get('ssl_cert', None)
+        self.ssl_cert_key = kwargs.get('ssl_cert_key', None)
 
     def get_members(self):
         logger.debug("getting members")
@@ -129,8 +90,6 @@ class Farm:
 
 class FarmMember:
     def __init__(self, *args, **kwargs):
-        print("args: {}".format(str(args)))
-        print("kwargs: {}".format(str(kwargs)))
         if len(args) == 1 and isinstance(args[0], str):
             self.url = args[0]
         else:
@@ -180,11 +139,11 @@ class FarmMember:
 
 if __name__ == '__main__':
     farm = Farm(farm_id = uuid.uuid4(),
-                args = {'lb_method': 'round_robin',
-                 'port': 443,
-                 'location': '/right/here',
-                 'protocol': 'https',
-                 'ip': '192.168.0.1'})
+                lb_method='round_robin',
+                port=443,
+                location='/right/here',
+                protocol='https',
+                ip='192.168.0.1')
     print(str(farm))
     print(" adding member")
     member = FarmMember(url='http://cool-hostname:6793', weight=2)

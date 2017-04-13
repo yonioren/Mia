@@ -53,7 +53,7 @@ class MiaLBBL(object):
 
     def create_farm(self, args):
         farm_id = self.generate_farm_id()
-        new_farm = Farm(str(farm_id), args)
+        new_farm = Farm(str(farm_id), **args)
         self.farms[farm_id] = new_farm
         self.create_indexes(farm_id, new_farm)
         self.controller.commit_farm(new_farm)

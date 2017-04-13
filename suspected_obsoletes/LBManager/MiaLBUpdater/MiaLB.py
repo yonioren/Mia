@@ -15,10 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from json import loads
 from re import sub
+
 from requests import get, post, delete
 
-from LBManager.utils.mialb_manager_config import logger
-from LBManager.utils.mialb_useful import get_ip
+from suspected_obsoletes.LBManager.utils import get_ip
+from suspected_obsoletes.LBManager.utils import logger
 
 
 class MiaLB(object):

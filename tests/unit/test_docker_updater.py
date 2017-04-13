@@ -13,16 +13,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from docker import from_env as docker_from_env
-from docker.errors import APIError, NotFound
 from os import path
-from requests import get
 from time import sleep
 from unittest import TestCase
 
 from LBManager.MiaLBUpdater.DockerUpdater import DockerUpdater
 from LBManager.MiaLBUpdater.MiaLB import Farm
-from LBManager.utils.mialb_manager_config import logger
+from docker import from_env as docker_from_env
+from docker.errors import APIError, NotFound
+from requests import get
+
+from suspected_obsoletes.LBManager.utils import logger
 
 
 class TestDockerUpdater(TestCase):
