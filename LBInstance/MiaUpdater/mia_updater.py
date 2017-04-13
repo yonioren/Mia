@@ -23,6 +23,7 @@ from socket import gethostbyname_ex
 from MiaClient import MiaClient
 from MiaUtils.mialb_useful import find_host_address
 
+
 class MiaUpdater(object):
     def __init__(self, target_service=None):
         self.target_service = environ.get('MIALB_TARGET_SERVICE', target_service)

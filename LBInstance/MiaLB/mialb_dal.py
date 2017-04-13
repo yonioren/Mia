@@ -17,6 +17,7 @@ import errno
 from io import open
 from logging import getLogger
 from os import remove, system, listdir
+from re import sub
 
 from mialb_entities import FarmMember, Farm, logger
 
@@ -92,11 +93,17 @@ class MiaLBDAL(object):
         file_content += '}\n'
         # build the farm configuration section
         file_content += 'server {\n'
-        if isinstance(farm.port, list):
-            for port in farm.port:
-                file_content += '\tlisten ' + str(farm.ip) + ':' + str(port) + ';\n'
-        else:
-            file_content += '\tlisten ' + str(farm.ip) + ':' + str(farm.port) + ';\n'
+        for bind in farm.listen:
+            file_content += '\tlisten ' + \
+                            (str(bind['ip']) + ':' if 'ip' in bind else "") + \
+                            str(bind['port']) + \
+                            (' ssl' if 'ssl' in bind and str(bind['ssl']) else "") + \
+                            ';\n'
+        if farm.server_name:
+            file_content += '\tserver_name ' + str(farm.server_name) + ';\n'
+        if farm.ssl != {}:
+            file_content += '\tssl_certificate ' + str(farm.ssl['certificate']) + ';\n'
+            file_content += '\tssl_certificate_key ' + str(farm.ssl['certificate_key']) + ';\n'
         file_content += '\tlocation ' + str(farm.location) + ' {\n'
         file_content += '\t\tproxy_pass ' + str(farm.protocol) + '://' + str(farm.name) + ';\n'
         file_content += '\t}\n'
@@ -165,32 +172,88 @@ class MiaLBDAL(object):
             head = str(content.pop())
             if head == 'listen':
                 listen = str(content.pop())
-                if listen.endswith(';'):
-                    listen = listen[:-1]
-                if ':' in listen:
-                    listen = listen.split(':')
-                    farm_args['ip'] = listen[0]
-                    if 'port' not in farm_args:
-                        farm_args['port'] = [listen[1]]
-                    else:
-                        farm_args['port'].append(listen[1])
+                if listen[-1] == ';':
+                    listen = sub(r';$', '', listen)
+                    ssl = False
+                elif sub(r';$', '', str(content[-1])) == 'ssl':
+                    ssl = content.pop() or True
+                elif str(content[-1]) == ';':
+                    ssl = content.pop() and False
                 else:
-                    if 'port' not in farm_args:
-                        farm_args['port'] = [listen]
-                    else:
-                        farm_args['port'].append(listen)
+                    logger.debug("after listen expected ;, instead got {} ".format(
+                        str(listen) + '\n' + str(content.pop())
+                    ))
+                    raise "In MiaLBDAL.parsing_server: after listen expected ;, instead got {} ".format(
+                        str(listen) + '\n' + str(content.pop())
+                    )
+                if 'listen' not in farm_args:
+                    farm_args['listen'] = []
+                if ':' in listen:
+                    farm_args['listen'].append({'ip': listen.split(':')[0], 'port': listen.split(':')[1], 'ssl': ssl})
+                else:
+                    farm_args['listen'].append({'ip': '0.0.0.0', 'port': listen, 'ssl': ssl})
+
+            elif head == 'server_name':
+                name = str(content.pop())
+                if name[-1] == ';':
+                    name = sub(r';$', '', name)
+                elif str(content[-1]) == ';':
+                    content.pop()
+                else:
+                    logger.debug("after server_name expected ;, instead got {} ".format(
+                        str(listen) + '\n' + str(content.pop())
+                    ))
+                    raise "In MiaLBDAL.parsing_server: after server_name expected ;, instead got {} ".format(
+                        str(listen) + '\n' + str(content.pop())
+                    )
+                farm_args['server_name'] = name
+
+            elif head == 'ssl_certificate':
+                cert = str(content.pop())
+                if cert[-1] == ';':
+                    cert = sub(r';$', '', cert)
+                elif str(content[-1]) == ';':
+                    content.pop()
+                else:
+                    logger.debug("after ssl_certificate expected ;, instead got {} ".format(
+                        str(cert) + '\n' + str(content.pop())
+                    ))
+                    raise "In MiaLBDAL.parsing_server: after ssl_certificate expected ;, instead got {} ".format(
+                        str(cert) + '\n' + str(content.pop())
+                    )
+                if 'ssl' not in farm_args:
+                    farm_args['ssl'] = {}
+                farm_args['ssl']['certificate'] = cert
+
+            elif head == 'ssl_certificate_key':
+                key = str(content.pop())
+                if key[-1] == ';':
+                    key = sub(r';$', '', key)
+                elif str(content[-1]) == ';':
+                    content.pop()
+                else:
+                    logger.debug("after ssl_certificate_key expected ;, instead got {} ".format(
+                        str(key) + '\n' + str(content.pop())
+                    ))
+                    raise "In MiaLBDAL.parsing_server: after ssl_certificate_key expected ;, instead got {} ".format(
+                        str(key) + '\n' + str(content.pop())
+                    )
+                if 'ssl' not in farm_args:
+                    farm_args['ssl'] = {}
+                farm_args['ssl']['certificate_key'] = key
+
             elif head == 'location':
                 farm_args['location'] = str(content.pop())
                 if str(content.pop()) == '{':
                     self.parsing_location(content, farm_args, members_args)
                 else:
                     logger.debug("after location expected {, instead got {} ".format(head))
-                    raise "In MiaLB_Controller.parsing_server: after location expected {, instead got {} ".format(head)
+                    raise "In MiaLBDAL.parsing_server: after location expected {, instead got {} ".format(head)
             elif head == '}':
                 return True
             else:
                 logger.debug("unknown word {} ".format(head))
-                raise "In MiaLB_Controller.parsing_server: unknown word {} ".format(head)
+                raise "In MiaLBDAL.parsing_server: unknown word {} ".format(head)
 
     @staticmethod
     def parsing_location(content, farm_args, members_args):

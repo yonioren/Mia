@@ -14,11 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import logging
-import os
 import re
-import socket
 import uuid
 
+from itertools import chain
 
 logger = logging.getLogger(__name__)
 
@@ -31,18 +30,35 @@ LB_METHOD = 'round_robin'
 class Farm:
     def __init__(self, farm_id, **kwargs):
         self.farm_id = str(farm_id)
+        # backward compatibility
+        self._listen_back_compat(**kwargs)
+
         # set defaults
         self.lb_method = kwargs.get('lb_method', 'round_robin')
-        self.port = kwargs.get('port', 80)
         self.location = kwargs.get('location', '/')
         self.protocol = kwargs.get('protocol', 'http')
         self.members = kwargs.get('members', {})
-        self.ip = kwargs.get('ip', '0.0.0.0')
+
         self.name = kwargs.get('name', str(self.ip) + ":" + str(self.port) + '-' + str(self.location).replace('/', '-'))
         self.server_name = kwargs.get('server_name', None)
-        self.ssl =kwargs.get('ssl', False)
-        self.ssl_cert = kwargs.get('ssl_cert', None)
-        self.ssl_cert_key = kwargs.get('ssl_cert_key', None)
+        self.ssl = kwargs.get('ssl', {})
+
+    def _listen_back_compat(self, **kwargs):
+        self.listen = kwargs.get('listen', [])
+        if 'ip' in kwargs or 'port' in kwargs:
+            self.ip = kwargs.get('ip', '0.0.0.0')
+            if not isinstance(self.ip, list):
+                self.ip = [self.ip]
+            self.port = kwargs.get('port', 80)
+            if not isinstance(self.port, list):
+                self.port = [self.port]
+            for ip in self.ip:
+                for port in self.port:
+                    ssl = port in [443]
+                    if {'ip': ip, 'port': port, 'ssl': ssl} not in self.listen:
+                        self.listen.append({'ip': ip, 'port': port, 'ssl': ssl})
+        self.ip = self.listen[0]['ip']
+        self.port = self.listen[0]['port']
 
     def get_members(self):
         logger.debug("getting members")
