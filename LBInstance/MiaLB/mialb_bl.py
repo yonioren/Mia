@@ -61,7 +61,7 @@ class MiaLBBL(object):
         
     def update_farm(self, farm_id, args):
         farm = self.get_farm(farm_id)
-        farm.update_farm(args)
+        farm.update_farm(**args)
         self.create_indexes(farm_id, farm)
         self.controller.commit_farm(farm)
         return json.dumps({"farm": farm.__dict__}), 200

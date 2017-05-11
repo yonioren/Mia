@@ -18,6 +18,8 @@ import re
 import uuid
 
 from itertools import chain
+from socket import inet_aton, gethostbyname
+from socket import error as socket_error
 
 logger = logging.getLogger(__name__)
 
@@ -34,14 +36,50 @@ class Farm:
         self._listen_back_compat(**kwargs)
 
         # set defaults
-        self.lb_method = kwargs.get('lb_method', 'round_robin')
+        self.lb_method = self._validate_lbmethod(kwargs.get('lb_method', 'round_robin'),)
         self.location = kwargs.get('location', '/')
-        self.protocol = kwargs.get('protocol', 'http')
+        self.protocol = self._validate_protocol(kwargs.get('protocol', 'http'))
         self.members = kwargs.get('members', {})
 
         self.name = kwargs.get('name', str(self.ip) + ":" + str(self.port) + '-' + str(self.location).replace('/', '-'))
         self.server_name = kwargs.get('server_name', None)
         self.ssl = kwargs.get('ssl', {})
+
+        # validations
+        if self.lb_method not in ['round_robin', 'least_conn', 'ip_hash', 'hash', 'least_time']:
+            self.lb_method = 'round_robin'
+        if self.protocol.lower() not in ['http', 'https', 'tcp', 'udp']:
+            self.protocol = 'http'
+
+    def update_farm(self, **kwargs):
+        self.lb_method = self._validate_lbmethod(kwargs.get('lb_method', self.lb_method), self.lb_method)
+        self.location = kwargs.get('location', self.location)
+        self.protocol = self._validate_protocol(kwargs.get('protocol', self.protocol), self.protocol)
+        self.members = kwargs.get('members', self.members)
+
+        self.listen = kwargs.get('listen', self.listen)
+        self.name = kwargs.get('name', self.name)
+        self.server_name = kwargs.get('server_name', self.server_name)
+        for key, value in kwargs.get('ssl', self.ssl).iteritems():
+            self.ssl[key] = value
+
+    @staticmethod
+    def _validate_lbmethod(lb_method, default=None):
+        if lb_method in ['round_robin', 'least_conn', 'ip_hash', 'hash', 'least_time']:
+            return lb_method
+        elif default is not None and default in ['round_robin', 'least_conn', 'ip_hash', 'hash', 'least_time']:
+            return default
+        else:
+            return 'round_robin'
+
+    @staticmethod
+    def _validate_protocol(protocol, default=None):
+        if protocol.lower() in ['http', 'https', 'tcp', 'udp']:
+            return  protocol
+        elif default is not None and default.lower() in ['http', 'https', 'tcp', 'udp']:
+            return  default
+        else:
+            return 'http'
 
     def _listen_back_compat(self, **kwargs):
         self.listen = kwargs.get('listen', [])
@@ -55,8 +93,21 @@ class Farm:
             for ip in self.ip:
                 for port in self.port:
                     ssl = port in [443]
+                    try:
+                        inet_aton(ip)
+                    except socket_error:
+                        try:
+                            ip = gethostbyname(ip)
+                        except Exception:
+                            ip = '0.0.0.0'
+                    except Exception:
+                        ip = '0.0.0.0'
+                    if MIN_PORT > int(port) or int(port) > MAX_PORT:
+                        port = 80
                     if {'ip': ip, 'port': port, 'ssl': ssl} not in self.listen:
                         self.listen.append({'ip': ip, 'port': port, 'ssl': ssl})
+        if not self.listen:
+            self.listen = [{'ip': '0.0.0.0', 'port': '80'}]
         self.ip = self.listen[0]['ip']
         self.port = self.listen[0]['port']
 

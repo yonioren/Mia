@@ -89,20 +89,35 @@ class MiaLBView:
         else:
             logger.debug("unknown method: {}".format(request.method.to_string()))
             raise("in MiaLBView.farm_member_api, unknown method: {}".format(request.method.to_string()))
-        
+
+    def farm_cert_api(self, farm_id):
+        if request.method == 'GET':
+            filename = self.model.get_farm(farm_id).ssl[pem]
+            return json.dumps({filename.split('/')[-1]: open(filename).read()})
+        elif request.method in ['POST', 'PUT']:
+            open("/etc/nginx/conf.d/uploaded-certificate.pem", 'wb').write(request.files['cert'].read())
+            open("/etc/nginx/conf.d/uploaded-certificate_key.pem", 'wb').write(request.files['key'].read())
+            self.model.update_farm(farm_id, {'ssl': {'cert': "/etc/nginx/conf.d/uploaded-certificate.pem",
+                                                     'key': "/etc/nginx/conf.d/uploaded-certificate_key.pem"}})
+            return json.dumps(self.model.get_farm(farm_id))
+
     @staticmethod
     def request_data(request):
-        if request.headers['Content-Type'] == 'application/json':
+        try:
             return json.loads(request.data)
-        elif request.headers['Content-Type'] == 'text/plain':
-            try:
-                return json.loads(request.data)
-            except Exception:
-                raise Exception("couldn't parse request {} as json".format(str(request.data)))
-        else:
-            logger.debug("unknown content type: %s" % request.headers['Content-Type'])
-            raise Exception("unknown content type: {}".format(request.headers['Content-Type']))
-        
+        except Exception:
+            raise Exception("couldn't parse request {} as json".format(str(request.data)))
+
+    def _extract_certs(self, args):
+        if request.files and ['certificate', 'certificate_key'] in request.files:
+            request.files['cert'] = request.files.pop('certificate')
+            request.files['key'] = request.files.pop('certificate_key')
+        if request.files and ['key', 'cert'] in request.files:
+            file.save('/etc/nginx/uploaded-cert.pem', request.files['cert'])
+            file.save('/etc/nginx/uploaded-key.pem', request.files['key'])
+            args['ssl'] = {'certificate': '/etc/nginx/uploaded-cert.pem',
+                           'certificate_key': '/etc/nginx/uploaded-key.pem'}
+
     def view_api(self):
         routes = [
                 {'rule': '/MiaLB/farms',
@@ -116,6 +131,9 @@ class MiaLBView:
                  'methods': ['GET', 'POST']},
                 {'rule': '/MiaLB/farms/<string:farm_id>/members/<string:member_id>',
                  'view_func': self.farm_member_api,
-                 'methods': ['GET', 'DELETE']}
+                 'methods': ['GET', 'DELETE']},
+                {'rule': '/MiaLB/farms/<string:farm_id>/certs',
+                 'view_func': self.farm_cert_api,
+                 'methods': ['GET', 'POST', 'PUT']}
                 ]
         return routes

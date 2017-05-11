@@ -63,7 +63,7 @@ class TestMiaEntities(unittest.TestCase):
                     port='8080',
                     ip='190.20.18.139',
                     location='/right/here')
-        eq_(farm.location, '190.20.18.139:8080--right-here')
+        eq_(farm.name, '190.20.18.139:8080--right-here')
 
     def test_farm_location_valid(self):
         farm = Farm(farm_id=uuid.uuid4(),

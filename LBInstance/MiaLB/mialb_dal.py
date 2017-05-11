@@ -97,7 +97,7 @@ class MiaLBDAL(object):
             file_content += '\tlisten ' + \
                             (str(bind['ip']) + ':' if 'ip' in bind else "") + \
                             str(bind['port']) + \
-                            (' ssl' if 'ssl' in bind and str(bind['ssl']) else "") + \
+                            (' ssl' if 'ssl' in bind and bool(bind['ssl']) else "") + \
                             ';\n'
         if farm.server_name:
             file_content += '\tserver_name ' + str(farm.server_name) + ';\n'
